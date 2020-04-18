@@ -5,20 +5,25 @@ def calc_max_length(tensor):
     return max(len(t) for t in tensor)
 
 
-def caption_features(train_captions, top_k):
+def make_tokenizer(train_captions, top_k):
 
     # Choose the top 5000 words from the vocabulary
     # top_k = 5000
-    global tokenizer
     tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=top_k,
                                                       oov_token="<unk>",
                                                       filters='!"#$%&()*+.,-/:;=?@[\]^_`{|}~ ')
     tokenizer.fit_on_texts(train_captions)
-    train_seqs = tokenizer.texts_to_sequences(train_captions)
-
 
     tokenizer.word_index['<pad>'] = 0
     tokenizer.index_word[0] = '<pad>'
+
+    return tokenizer
+
+
+
+def caption_features(train_captions, top_k):
+
+    tokenizer = make_tokenizer(train_captions, top_k)
 
     # Create the tokenized vectors
     train_seqs = tokenizer.texts_to_sequences(train_captions)

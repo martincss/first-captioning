@@ -1,6 +1,8 @@
 import tensorflow as tf
-from preprocess_encode_images import tokenizer
-from train_data_preparation import embedding_dim, units, vocab_size, dataset
+import time
+import numpy as np
+from train_data_preparation import embedding_dim, units, vocab_size, dataset, \
+                                    tokenizer, num_steps
 from model import CNN_Encoder, RNN_Decoder
 
 
@@ -72,7 +74,7 @@ def train_step(img_tensor, target):
   return loss, total_loss
 
 
-EPOCHS = 20
+EPOCHS = 6
 
 for epoch in range(start_epoch, EPOCHS):
     start = time.time()
@@ -88,7 +90,7 @@ for epoch in range(start_epoch, EPOCHS):
     # storing the epoch end loss value to plot later
     loss_plot.append(total_loss / num_steps)
 
-    if epoch % 5 == 0:
+    if epoch % 1 == 0:
       ckpt_manager.save()
 
     print ('Epoch {} Loss {:.6f}'.format(epoch + 1,
