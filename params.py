@@ -1,3 +1,4 @@
+import os
 
 # Image preprocessing
 CACHE_FEATURES_BATCH_SIZE = 4
@@ -26,6 +27,7 @@ vocab_size = top_k + 1
 BATCH_SIZE = 16
 BUFFER_SIZE = 1000
 EPOCHS = 6
+CHECKPOINT_PATH = "./checkpoints/train"
 
 # Shape of the vector extracted from InceptionV3 is (64, 2048)
 # These two variables represent that vector shape

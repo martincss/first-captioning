@@ -4,7 +4,7 @@ import numpy as np
 from train_data_preparation import tokenizer, num_steps, dataset
 from model import CNN_Encoder, RNN_Decoder
 
-from params import embedding_dim, units, vocab_size, EPOCHS
+from params import embedding_dim, units, vocab_size, EPOCHS, CHECKPOINT_PATH
 
 encoder = CNN_Encoder(embedding_dim)
 decoder = RNN_Decoder(embedding_dim, units, vocab_size)
@@ -23,11 +23,10 @@ def loss_function(real, pred):
   return tf.reduce_mean(loss_)
 
 
-checkpoint_path = "./checkpoints/train"
 ckpt = tf.train.Checkpoint(encoder=encoder,
                            decoder=decoder,
                            optimizer = optimizer)
-ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
+ckpt_manager = tf.train.CheckpointManager(ckpt, CHECKPOINT_PATH, max_to_keep=5)
 
 
 start_epoch = 0

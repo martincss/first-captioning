@@ -30,8 +30,6 @@ def caption_features(train_captions, top_k):
     # If you do not provide a max_length value, pad_sequences calculates it automatically
     cap_vector = tf.keras.preprocessing.sequence.pad_sequences(train_seqs, padding='post')
     #
-    # # Calculates the max_length, which is used to store the attention weights
-    # max_length = calc_max_length(train_seqs)
 
 
     return cap_vector#, max_length
