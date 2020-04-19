@@ -6,28 +6,17 @@ from sklearn.utils import shuffle
 
 import json
 
-from download_data import PATH
 from preprocess_encode_images import extract_cache_features
 from preprocess_tokenize_captions import make_tokenizer, caption_features
 
+from params import IMGS_PATH, ANNOTATION_FILE, num_examples, top_k, \
+                    BUFFER_SIZE, BATCH_SIZE
+from utils import enable_gpu_memory_growth
 
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        # Currently, memory growth needs to be the same across GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-    except RuntimeError as e:
-        # Memory growth must be set before GPUs have been initialized
-        print(e)
-
-
-annotation_file = './annotations/captions_train2014.json'
+enable_gpu_memory_growth()
 
 # Read the json file
-with open(annotation_file, 'r') as f:
+with open(ANNOTATION_FILE, 'r') as f:
     annotations = json.load(f)
 
 # Store captions and image names in vectors
@@ -37,7 +26,7 @@ all_img_name_vector = []
 for annot in annotations['annotations']:
     caption = '<start> ' + annot['caption'] + ' <end>'
     image_id = annot['image_id']
-    full_coco_image_path = PATH + 'COCO_train2014_' + '%012d.jpg' % (image_id)
+    full_coco_image_path = IMGS_PATH + 'COCO_train2014_' + '%012d.jpg' % (image_id)
 
     all_img_name_vector.append(full_coco_image_path)
     all_captions.append(caption)
@@ -48,13 +37,10 @@ train_captions, img_name_vector = shuffle(all_captions,
                                           all_img_name_vector,
                                           random_state=1)
 
-# Select the first 30000 captions from the shuffled set
-num_examples = 30000
-top_k = 5000
 train_captions = train_captions[:num_examples]
 img_name_vector = img_name_vector[:num_examples]
 
-#extract_cache_features(img_name_vector)
+extract_cache_features(img_name_vector)
 cap_vector = caption_features(train_captions, top_k)
 tokenizer = make_tokenizer(train_captions, top_k)
 
@@ -64,19 +50,7 @@ img_name_train, img_name_val, cap_train, cap_val = train_test_split(img_name_vec
                                                                     test_size=0.2,
                                                                     random_state=0)
 
-
-# Feel free to change these parameters according to your system's configuration
-
-BATCH_SIZE = 16#64
-BUFFER_SIZE = 1000
-embedding_dim = 256
-units = 512
-vocab_size = top_k + 1
 num_steps = len(img_name_train) // BATCH_SIZE
-# Shape of the vector extracted from InceptionV3 is (64, 2048)
-# These two variables represent that vector shape
-features_shape = 2048
-attention_features_shape = 64
 
 # Load the numpy files
 def map_func(img_name, cap):

@@ -2,6 +2,8 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 
+from params import CACHE_FEATURES_BATCH_SIZE, UPDATE_CACHE
+
 def load_image(image_path):
     img = tf.io.read_file(image_path)
     img = tf.image.decode_jpeg(img, channels=3)
@@ -24,22 +26,25 @@ def image_features_extracter():
 
 def extract_cache_features(img_name_vector):
 
-    image_features_extract_model = image_features_extracter()
+    if UPDATE_CACHE:
+
+        image_features_extract_model = image_features_extracter()
 
 
-    # Get unique images
-    encode_train = sorted(set(img_name_vector))
+        # Get unique images
+        encode_train = sorted(set(img_name_vector))
 
-    # Feel free to change batch_size according to your system configuration
-    image_dataset = tf.data.Dataset.from_tensor_slices(encode_train)
-    image_dataset = image_dataset.map(
-      load_image, num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(4)#16)
+        # Feel free to change batch_size according to your system configuration
+        image_dataset = tf.data.Dataset.from_tensor_slices(encode_train)
+        image_dataset = image_dataset.map(
+          load_image, num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(
+                                                    CACHE_FEATURES_BATCH_SIZE)
 
-    for img, path in tqdm(image_dataset):
-      batch_features = image_features_extract_model(img)
-      batch_features = tf.reshape(batch_features,
-                                  (batch_features.shape[0], -1, batch_features.shape[3]))
+        for img, path in tqdm(image_dataset):
+          batch_features = image_features_extract_model(img)
+          batch_features = tf.reshape(batch_features,
+                                      (batch_features.shape[0], -1, batch_features.shape[3]))
 
-      for bf, p in zip(batch_features, path):
-        path_of_feature = p.numpy().decode("utf-8")
-        np.save(path_of_feature, bf.numpy())
+          for bf, p in zip(batch_features, path):
+            path_of_feature = p.numpy().decode("utf-8")
+            np.save(path_of_feature, bf.numpy())

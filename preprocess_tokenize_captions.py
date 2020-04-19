@@ -7,8 +7,6 @@ def calc_max_length(tensor):
 
 def make_tokenizer(train_captions, top_k):
 
-    # Choose the top 5000 words from the vocabulary
-    # top_k = 5000
     tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=top_k,
                                                       oov_token="<unk>",
                                                       filters='!"#$%&()*+.,-/:;=?@[\]^_`{|}~ ')
