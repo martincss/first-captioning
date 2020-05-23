@@ -4,7 +4,7 @@ import tensorflow as tf
 # Download caption annotation files
 annotation_folder = '/annotations/'
 image_train_folder = '/train2014/'
-image_validation_folder '/validation2014/'
+image_validation_folder = '/validation2014/'
 
 captions_url = 'http://images.cocodataset.org/annotations/annotations_trainval2014.zip'
 train_url = 'http://images.cocodataset.org/zips/train2014.zip'
