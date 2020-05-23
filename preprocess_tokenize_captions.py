@@ -29,7 +29,5 @@ def caption_features(train_captions, top_k):
     # Pad each vector to the max_length of the captions
     # If you do not provide a max_length value, pad_sequences calculates it automatically
     cap_vector = tf.keras.preprocessing.sequence.pad_sequences(train_seqs, padding='post')
-    #
 
-
-    return cap_vector#, max_length
+    return cap_vector

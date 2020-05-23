@@ -1,4 +1,11 @@
+import os
 import tensorflow as tf
+
+def running_on_cluster():
+
+    hostname = os.uname()[1]
+
+    return hostname == 'nabucodonosor2'
 
 
 def enable_gpu_memory_growth():
