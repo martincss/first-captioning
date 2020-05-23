@@ -9,7 +9,7 @@ import json
 from preprocess_encode_images import extract_cache_features
 from preprocess_tokenize_captions import make_tokenizer, caption_features
 
-from params import IMGS_PATH, ANNOTATION_FILE, num_examples, top_k, \
+from params import IMGS_PATH_TRAIN, ANNOTATION_FILE, num_examples, top_k, \
                     BUFFER_SIZE, BATCH_SIZE
 from utils import enable_gpu_memory_growth
 
@@ -26,7 +26,7 @@ all_img_name_vector = []
 for annot in annotations['annotations']:
     caption = '<start> ' + annot['caption'] + ' <end>'
     image_id = annot['image_id']
-    full_coco_image_path = IMGS_PATH + 'COCO_train2014_' + '%012d.jpg' % (image_id)
+    full_coco_image_path = IMGS_PATH_TRAIN + 'COCO_train2014_' + '%012d.jpg' % (image_id)
 
     all_img_name_vector.append(full_coco_image_path)
     all_captions.append(caption)

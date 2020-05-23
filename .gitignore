@@ -2,6 +2,10 @@
 annotations/
 train2014/
 
+# Cached image features
+image_features_train
+image_features_valid
+
 # Training checkpoints
 checkpoints/
 
