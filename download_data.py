@@ -40,7 +40,7 @@ if not os.path.exists(os.path.abspath('.') + image_validation_folder):
 
     image_zip = tf.keras.utils.get_file('val2014.zip',
                                       cache_subdir=os.path.abspath('.'),
-                                      origin = 'valid_url,
+                                      origin = valid_url,
                                       extract = True)
 
     os.remove(image_zip)
