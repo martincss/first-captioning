@@ -44,18 +44,18 @@ extract_cache_features(img_name_vector, IMGS_FEATURES_CACHE_DIR_TRAIN)
 cap_vector = caption_features(train_captions, top_k)
 tokenizer = make_tokenizer(train_captions, top_k)
 
-# Create training and validation sets using an 80-20 split
-img_name_train, img_name_val, cap_train, cap_val = train_test_split(img_name_vector,
-                                                                    cap_vector,
-                                                                    test_size=0.2,
-                                                                    random_state=0)
+# Training set already split from training and validation directories
+img_name_train, cap_train = img_name_vector, cap_vector
 
 num_steps = len(img_name_train) // BATCH_SIZE
 
 # Load the numpy files
 def map_func(img_name, cap):
-  img_tensor = np.load(img_name.decode('utf-8')+'.npy')
-  return img_tensor, cap
+    img_feature_filename = IMGS_FEATURES_CACHE_DIR_TRAIN + \
+                        img_name.decode('utf-8').split('/')[-1] + '.npy'
+
+    img_tensor = np.load(img_feature_filename)
+    return img_tensor, cap
 
 
 dataset = tf.data.Dataset.from_tensor_slices((img_name_train, cap_train))

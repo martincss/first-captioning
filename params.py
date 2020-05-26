@@ -10,7 +10,7 @@ os.chdir(working_directory)
 # Image preprocessing
 if running_on_cluster():
     CACHE_FEATURES_BATCH_SIZE = 32
-    UPDATE_CACHE = True
+    UPDATE_CACHE = False
 else:
     CACHE_FEATURES_BATCH_SIZE = 4
     UPDATE_CACHE = False
