@@ -3,7 +3,8 @@ import sys
 from utils import running_on_cluster
 
 # Set working directory to script location
-working_directory = os.path.dirname(sys.argv[0])
+abspath = os.path.abspath(__file__)
+working_directory = os.path.dirname(abspath)
 os.chdir(working_directory)
 
 # Image preprocessing
@@ -21,7 +22,9 @@ IMGS_FEATURES_CACHE_DIR_VAL = working_directory + 'image_features_val'
 IMGS_PATH_TRAIN = working_directory + '/train2014/'
 ANNOTATION_FILE = working_directory + '/annotations/captions_train2014.json'
 
-# Select the first 30000 captions from the shuffled set
+# Select the number of instances for the training set
+# This will only be used as a slicing index, so a value of -1 will use the full
+# set
 if running_on_cluster():
     num_examples = 30000
 else:
