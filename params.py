@@ -1,6 +1,10 @@
 import os
+import sys
 from utils import running_on_cluster
 
+# Set working directory to script location
+working_directory = os.path.dirname(sys.argv[0])
+os.chdir(working_directory)
 
 # Image preprocessing
 if running_on_cluster():
@@ -8,11 +12,14 @@ if running_on_cluster():
     UPDATE_CACHE = True
 else:
     CACHE_FEATURES_BATCH_SIZE = 4
-    UPDATE_CACHE = True
+    UPDATE_CACHE = False
+
+IMGS_FEATURES_CACHE_DIR_TRAIN = working_directory + 'image_features_train'
+IMGS_FEATURES_CACHE_DIR_VAL = working_directory + 'image_features_val'
 
 # Training data preparation
-IMGS_PATH_TRAIN = os.path.abspath('.') + '/train2014/'
-ANNOTATION_FILE = './annotations/captions_train2014.json'
+IMGS_PATH_TRAIN = working_directory + '/train2014/'
+ANNOTATION_FILE = working_directory + '/annotations/captions_train2014.json'
 
 # Select the first 30000 captions from the shuffled set
 if running_on_cluster():

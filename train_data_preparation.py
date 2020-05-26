@@ -10,7 +10,7 @@ from preprocess_encode_images import extract_cache_features
 from preprocess_tokenize_captions import make_tokenizer, caption_features
 
 from params import IMGS_PATH_TRAIN, ANNOTATION_FILE, num_examples, top_k, \
-                    BUFFER_SIZE, BATCH_SIZE
+                    BUFFER_SIZE, BATCH_SIZE, IMGS_FEATURES_CACHE_DIR_TRAIN
 from utils import enable_gpu_memory_growth
 
 enable_gpu_memory_growth()
@@ -40,7 +40,7 @@ train_captions, img_name_vector = shuffle(all_captions,
 train_captions = train_captions[:num_examples]
 img_name_vector = img_name_vector[:num_examples]
 
-extract_cache_features(img_name_vector)
+extract_cache_features(img_name_vector, IMGS_FEATURES_CACHE_DIR_TRAIN)
 cap_vector = caption_features(train_captions, top_k)
 tokenizer = make_tokenizer(train_captions, top_k)
 
