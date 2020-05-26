@@ -97,5 +97,5 @@ def extract_cache_features(img_name_vector, cache_dir):
           for bf, p in zip(batch_features, path):
             # strips image directory from path and redirects to cache directory
             path_of_feature = p.numpy().decode("utf-8")
-            path_of_feature = cache_dir + path_of_feature.split('/')[1]
+            path_of_feature = cache_dir + path_of_feature.split('/')[-1]
             np.save(path_of_feature, bf.numpy())

@@ -9,14 +9,14 @@ os.chdir(working_directory)
 
 # Image preprocessing
 if running_on_cluster():
-    CACHE_FEATURES_BATCH_SIZE = 16
+    CACHE_FEATURES_BATCH_SIZE = 32
     UPDATE_CACHE = True
 else:
     CACHE_FEATURES_BATCH_SIZE = 4
     UPDATE_CACHE = False
 
-IMGS_FEATURES_CACHE_DIR_TRAIN = working_directory + 'image_features_train'
-IMGS_FEATURES_CACHE_DIR_VAL = working_directory + 'image_features_val'
+IMGS_FEATURES_CACHE_DIR_TRAIN = working_directory + '/image_features_train/'
+IMGS_FEATURES_CACHE_DIR_VAL = working_directory + '/image_features_val/'
 
 # Training data preparation
 IMGS_PATH_TRAIN = working_directory + '/train2014/'

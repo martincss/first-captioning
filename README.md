@@ -21,4 +21,4 @@ Thus a vector of shape `(8,8,2048)` is extracted from each image.
 
 This outputs are cached to disk, as keeping them in RAM would be faster but more
 memory intensive (with 8x8x2048 floats per image).
-_TODO: document time consumption for this process_
+Setting CACHE_FEATURES_BATCH_SIZE = 32, thus consuming close to 7000MiB of GPU RAM, the feature extraction takes about 36s per 1000 images.
