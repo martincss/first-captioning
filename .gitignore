@@ -1,6 +1,7 @@
 # Datasets
 annotations/
 train2014/
+val2014/
 
 # Cached image features
 image_features_train
