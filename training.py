@@ -1,5 +1,6 @@
 import tensorflow as tf
 import time
+import sys
 import numpy as np
 from train_data_preparation import tokenizer, num_steps, dataset
 from model import CNN_Encoder, RNN_Decoder
@@ -30,10 +31,10 @@ ckpt_manager = tf.train.CheckpointManager(ckpt, CHECKPOINT_PATH, max_to_keep=5)
 
 
 start_epoch = 0
-if ckpt_manager.latest_checkpoint:
-  start_epoch = int(ckpt_manager.latest_checkpoint.split('-')[-1])
-  # restoring the latest checkpoint in checkpoint_path
-  ckpt.restore(ckpt_manager.latest_checkpoint)
+# if ckpt_manager.latest_checkpoint:
+#   start_epoch = int(ckpt_manager.latest_checkpoint.split('-')[-1])
+#   # restoring the latest checkpoint in checkpoint_path
+#   ckpt.restore(ckpt_manager.latest_checkpoint)
 
 # adding this in a separate cell because if you run the training cell
 # many times, the loss_plot array will be reset
@@ -84,7 +85,8 @@ for epoch in range(start_epoch, EPOCHS):
 
         if batch % 100 == 0:
             print ('Epoch {} Batch {} Loss {:.4f}'.format(
-              epoch + 1, batch, batch_loss.numpy() / int(target.shape[1])))
+              epoch + 1, batch, batch_loss.numpy() / int(target.shape[1])),
+              file=sys.stdout)
     # storing the epoch end loss value to plot later
     loss_plot.append(total_loss / num_steps)
 
@@ -92,5 +94,7 @@ for epoch in range(start_epoch, EPOCHS):
       ckpt_manager.save()
 
     print ('Epoch {} Loss {:.6f}'.format(epoch + 1,
-                                         total_loss/num_steps))
-    print ('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
+                                         total_loss/num_steps),
+                                         file=sys.stdout)
+    print ('Time taken for 1 epoch {} sec\n'.format(time.time() - start),
+            file=sys.stdout)
