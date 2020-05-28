@@ -22,3 +22,8 @@ Thus a vector of shape `(8,8,2048)` is extracted from each image.
 This outputs are cached to disk, as keeping them in RAM would be faster but more
 memory intensive (with 8x8x2048 floats per image).
 Setting CACHE_FEATURES_BATCH_SIZE = 32, thus consuming close to 7000MiB of GPU RAM, the feature extraction takes about 36s per 1000 images.
+
+
+# About training
+
+Using 30000 training instances, with a batch size of 64 on an Nvidia 1080 Ti GPU, training time per epoch takes about 370s, with some overhead for the first epoch.
