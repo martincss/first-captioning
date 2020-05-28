@@ -56,7 +56,7 @@ def train_step(img_tensor, target):
 
       for i in range(1, target.shape[1]):
           # passing the features through the decoder
-          predictions, hidden, _ = decoder(dec_input, features, hidden)
+          predictions, hidden, _ = decoder((dec_input, features, hidden))
 
           loss += loss_function(target[:, i], predictions)
 
