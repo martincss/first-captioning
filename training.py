@@ -2,10 +2,12 @@ import tensorflow as tf
 import time
 import sys
 import numpy as np
-from train_data_preparation import tokenizer, num_steps, dataset
+from train_data_preparation import tokenizer, dataset
 from model import CNN_Encoder, RNN_Decoder
 
-from params import embedding_dim, units, vocab_size, EPOCHS, CHECKPOINT_PATH
+from params import embedding_dim, units, vocab_size, EPOCHS, CHECKPOINT_PATH, \
+                   num_examples, BATCH_SIZE
+
 
 encoder = CNN_Encoder(embedding_dim)
 decoder = RNN_Decoder(embedding_dim, units, vocab_size)
@@ -73,7 +75,7 @@ def train_step(img_tensor, target):
 
   return loss, total_loss
 
-
+num_steps = num_examples // BATCH_SIZE
 
 for epoch in range(start_epoch, EPOCHS):
     start = time.time()

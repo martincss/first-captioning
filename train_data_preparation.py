@@ -1,70 +1,38 @@
-import tensorflow as tf
-import numpy as np
-# Scikit-learn includes many helpful utilities
-from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
-import json
-
+from utils import enable_gpu_memory_growth
 from preprocess_encode_images import extract_cache_features
 from preprocess_tokenize_captions import make_tokenizer, caption_features
+from data_preparation import image_fnames_captions, create_dataset
 
-from params import IMGS_PATH_TRAIN, ANNOTATION_FILE, num_examples, top_k, \
-                    BUFFER_SIZE, BATCH_SIZE, IMGS_FEATURES_CACHE_DIR_TRAIN
-from utils import enable_gpu_memory_growth
+from params import ANNOTATION_FILE, IMGS_PATH_TRAIN, \
+                   IMGS_FEATURES_CACHE_DIR_TRAIN, \
+                   num_examples, top_k
+
+
 
 enable_gpu_memory_growth()
 
-# Read the json file
-with open(ANNOTATION_FILE, 'r') as f:
-    annotations = json.load(f)
-
-# Store captions and image names in vectors
-all_captions = []
-all_img_name_vector = []
-
-for annot in annotations['annotations']:
-    caption = '<start> ' + annot['caption'] + ' <end>'
-    image_id = annot['image_id']
-    full_coco_image_path = IMGS_PATH_TRAIN + 'COCO_train2014_' + '%012d.jpg' % (image_id)
-
-    all_img_name_vector.append(full_coco_image_path)
-    all_captions.append(caption)
+all_captions, all_img_paths = image_fnames_captions(ANNOTATION_FILE,
+                                                    IMGS_PATH_TRAIN,
+                                                    partition = 'train')
 
 # Shuffle captions and image_names together
 # Set a random state
-train_captions, img_name_vector = shuffle(all_captions,
-                                          all_img_name_vector,
-                                          random_state=1)
+train_captions, img_paths = shuffle(all_captions,
+                                    all_img_paths,
+                                    random_state=1)
 
 train_captions = train_captions[:num_examples]
-img_name_vector = img_name_vector[:num_examples]
+img_paths = img_paths[:num_examples]
 
-extract_cache_features(img_name_vector, IMGS_FEATURES_CACHE_DIR_TRAIN)
+extract_cache_features(img_paths, IMGS_FEATURES_CACHE_DIR_TRAIN)
 cap_vector = caption_features(train_captions, top_k)
 tokenizer = make_tokenizer(train_captions, top_k)
 
 # Training set already split from training and validation directories
-img_name_train, cap_train = img_name_vector, cap_vector
-
-num_steps = len(img_name_train) // BATCH_SIZE
-
-# Load the numpy files
-def map_func(img_name, cap):
-    img_feature_filename = IMGS_FEATURES_CACHE_DIR_TRAIN + \
-                        img_name.decode('utf-8').split('/')[-1] + '.npy'
-
-    img_tensor = np.load(img_feature_filename)
-    return img_tensor, cap
+img_paths_train, cap_train = img_paths, cap_vector
 
 
-dataset = tf.data.Dataset.from_tensor_slices((img_name_train, cap_train))
-
-# Use map to load the numpy files in parallel
-dataset = dataset.map(lambda item1, item2: tf.numpy_function(
-          map_func, [item1, item2], [tf.float32, tf.int32]),
-          num_parallel_calls=tf.data.experimental.AUTOTUNE)
-
-# Shuffle and batch
-dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
-dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+dataset = create_dataset(img_paths_train, cap_train, \
+                         IMGS_FEATURES_CACHE_DIR_TRAIN)
