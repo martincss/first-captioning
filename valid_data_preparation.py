@@ -28,5 +28,5 @@ cap_vector = caption_features(val_captions, tokenizer)
 img_paths_val, cap_val = img_paths, cap_vector
 
 
-dataset_val = create_dataset(img_paths_val, cap_val, \
-                             IMGS_FEATURES_CACHE_DIR_VAL)
+#dataset_val = create_dataset(img_paths_val, cap_val, \
+#                             IMGS_FEATURES_CACHE_DIR_VAL)

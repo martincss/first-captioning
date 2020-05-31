@@ -62,7 +62,7 @@ def create_dataset(image_paths, tokenized_captions, img_features_dir):
               num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     # Shuffle and batch
-    #dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+    dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
     dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     return dataset
