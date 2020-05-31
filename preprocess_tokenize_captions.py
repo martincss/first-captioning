@@ -19,9 +19,7 @@ def make_tokenizer(train_captions, top_k):
 
 
 
-def caption_features(train_captions, top_k):
-
-    tokenizer = make_tokenizer(train_captions, top_k)
+def caption_features(train_captions, tokenizer):
 
     # Create the tokenized vectors
     train_seqs = tokenizer.texts_to_sequences(train_captions)

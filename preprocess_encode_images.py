@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
 
-from params import CACHE_FEATURES_BATCH_SIZE, UPDATE_CACHE
+from params import CACHE_FEATURES_BATCH_SIZE
 
 def load_image(image_path):
     """
@@ -55,9 +55,6 @@ def extract_cache_features(img_name_vector, cache_dir):
     Extracts features for each image in input vector and caches them to disk as
     numpy binaries .npy, to the specified directory.
 
-    If the UPDATE_CACHE global is set to false, does nothing (thus enabling this
-    lengthy process only when explicitly set in the config script).
-
     The loading and preprocessing is done by batches, with size given by the
     CACHE_FEATURES_BATCH_SIZE global.
     # TODO: understand the dataset objects here
@@ -75,27 +72,26 @@ def extract_cache_features(img_name_vector, cache_dir):
 
     """
 
-    if UPDATE_CACHE:
 
-        image_features_extract_model = image_features_extracter()
-
-
-        # Get unique images
-        encode_train = sorted(set(img_name_vector))
+    image_features_extract_model = image_features_extracter()
 
 
-        image_dataset = tf.data.Dataset.from_tensor_slices(encode_train)
-        image_dataset = image_dataset.map(
-          load_image, num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(
-                                                    CACHE_FEATURES_BATCH_SIZE)
+    # Get unique images
+    encode_train = sorted(set(img_name_vector))
 
-        for img, path in tqdm(image_dataset):
-          batch_features = image_features_extract_model(img)
-          batch_features = tf.reshape(batch_features,
-                                      (batch_features.shape[0], -1, batch_features.shape[3]))
 
-          for bf, p in zip(batch_features, path):
-            # strips image directory from path and redirects to cache directory
-            path_of_feature = p.numpy().decode("utf-8")
-            path_of_feature = cache_dir + path_of_feature.split('/')[-1]
-            np.save(path_of_feature, bf.numpy())
+    image_dataset = tf.data.Dataset.from_tensor_slices(encode_train)
+    image_dataset = image_dataset.map(
+      load_image, num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(
+                                                CACHE_FEATURES_BATCH_SIZE)
+
+    for img, path in tqdm(image_dataset):
+      batch_features = image_features_extract_model(img)
+      batch_features = tf.reshape(batch_features,
+                                  (batch_features.shape[0], -1, batch_features.shape[3]))
+
+      for bf, p in zip(batch_features, path):
+        # strips image directory from path and redirects to cache directory
+        path_of_feature = p.numpy().decode("utf-8")
+        path_of_feature = cache_dir + path_of_feature.split('/')[-1]
+        np.save(path_of_feature, bf.numpy())

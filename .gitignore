@@ -5,7 +5,7 @@ val2014/
 
 # Cached image features
 image_features_train
-image_features_valid
+image_features_val
 
 # Training checkpoints
 checkpoints/

@@ -2,10 +2,11 @@ from sklearn.utils import shuffle
 
 from utils import enable_gpu_memory_growth
 from preprocess_encode_images import extract_cache_features
-from preprocess_tokenize_captions import make_tokenizer, caption_features
+from preprocess_tokenize_captions import make_tokenizer, caption_features, \
+                                         calc_max_length
 from data_preparation import image_fnames_captions, create_dataset
 
-from params import ANNOTATION_FILE, IMGS_PATH_TRAIN, \
+from params import ANNOTATION_FILE_TRAIN, IMGS_PATH_TRAIN, UPDATE_CACHE, \
                    IMGS_FEATURES_CACHE_DIR_TRAIN, \
                    num_examples, top_k
 
@@ -13,7 +14,7 @@ from params import ANNOTATION_FILE, IMGS_PATH_TRAIN, \
 
 enable_gpu_memory_growth()
 
-all_captions, all_img_paths = image_fnames_captions(ANNOTATION_FILE,
+all_captions, all_img_paths = image_fnames_captions(ANNOTATION_FILE_TRAIN,
                                                     IMGS_PATH_TRAIN,
                                                     partition = 'train')
 
@@ -26,13 +27,18 @@ train_captions, img_paths = shuffle(all_captions,
 train_captions = train_captions[:num_examples]
 img_paths = img_paths[:num_examples]
 
-extract_cache_features(img_paths, IMGS_FEATURES_CACHE_DIR_TRAIN)
-cap_vector = caption_features(train_captions, top_k)
+if UPDATE_CACHE:
+    extract_cache_features(img_paths, IMGS_FEATURES_CACHE_DIR_TRAIN)
+
 tokenizer = make_tokenizer(train_captions, top_k)
+cap_vector = caption_features(train_captions, tokenizer)
+
+# Calculates the max_length, which is used to store the attention weights
+train_max_length = calc_max_length(tokenizer.texts_to_sequences(train_captions))
 
 # Training set already split from training and validation directories
 img_paths_train, cap_train = img_paths, cap_vector
 
 
-dataset = create_dataset(img_paths_train, cap_train, \
-                         IMGS_FEATURES_CACHE_DIR_TRAIN)
+dataset_train = create_dataset(img_paths_train, cap_train, \
+                               IMGS_FEATURES_CACHE_DIR_TRAIN)
