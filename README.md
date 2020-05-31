@@ -26,4 +26,4 @@ Setting CACHE_FEATURES_BATCH_SIZE = 32, thus consuming close to 7000MiB of GPU R
 
 # About training
 
-Using 30000 training instances, with a batch size of 64 on an Nvidia 1080 Ti GPU, training time per epoch takes about 370s, with some overhead for the first epoch.
+Using 30000 training instances, with a batch size of 64 on an Nvidia 1080 Ti GPU, training time per epoch takes about 50-70s, with some overhead for the first epoch.
