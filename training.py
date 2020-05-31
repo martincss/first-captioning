@@ -116,4 +116,4 @@ def train(hparams):
     encoder.save_weights(MODELS_PATH + 'encoder_' + model_id + '.h5')
     decoder.save_weights(MODELS_PATH + 'decoder_' + model_id + '.h5')
 
-    return model_id, total_time
+    return model_id, total_time, encoder, decoder

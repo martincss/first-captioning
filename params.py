@@ -57,6 +57,7 @@ BUFFER_SIZE = 1000
 EPOCHS = 2
 CHECKPOINT_PATH = working_directory + "/checkpoints/train"
 MODELS_PATH = working_directory + '/saved_models/'
+RESULTS_PATH = working_directory + '/search_results/'
 
 # Shape of the vector extracted from InceptionV3 is (64, 2048)
 # These two variables represent that vector shape

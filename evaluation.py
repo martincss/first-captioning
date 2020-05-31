@@ -6,7 +6,7 @@ from train_data_preparation import tokenizer, train_max_length
 from params import attention_features_shape, IMGS_FEATURES_CACHE_DIR_VAL
 
 
-def evaluate(image, encoder, decoder):
+def generate_captions_single(image, encoder, decoder):
     attention_plot = np.zeros((train_max_length, attention_features_shape))
 
     hidden = decoder.reset_state(batch_size=1)
@@ -22,7 +22,7 @@ def evaluate(image, encoder, decoder):
     dec_input = tf.expand_dims([tokenizer.word_index['<start>']], 0)
     result = []
 
-    for i in range(max_length):
+    for i in range(train_max_length):
         predictions, hidden, attention_weights = decoder((dec_input, features, hidden))
 
         attention_plot[i] = tf.reshape(attention_weights, (-1, )).numpy()
@@ -37,6 +37,17 @@ def evaluate(image, encoder, decoder):
 
     attention_plot = attention_plot[:len(result), :]
     return result, attention_plot
+
+
+def generate_captions_all(img_paths, encoder, decoder):
+
+    all_captions = []
+
+    for image in img_paths:
+        caption, _ = generate_captions_single(image, encoder, decoder)
+        all_captions.append(caption)
+
+    return all_captions
 
 
 def plot_attention(image, result, attention_plot):
