@@ -2,7 +2,7 @@ import tensorflow as tf
 import time
 import sys
 import numpy as np
-from train_data_preparation import tokenizer, dataset
+from train_data_preparation import tokenizer, dataset_train
 from model import CNN_Encoder, RNN_Decoder
 
 from params import embedding_dim, units, vocab_size, EPOCHS, CHECKPOINT_PATH, \
@@ -81,7 +81,7 @@ for epoch in range(start_epoch, EPOCHS):
     start = time.time()
     total_loss = 0
 
-    for (batch, (img_tensor, target)) in enumerate(dataset):
+    for (batch, (img_tensor, target)) in enumerate(dataset_train):
         batch_loss, t_loss = train_step(img_tensor, target)
         total_loss += t_loss
 

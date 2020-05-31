@@ -1,45 +1,21 @@
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
-plt.ion()
 from PIL import Image
 
-from train_data_preparation import train_captions, tokenizer, img_name_val, \
-                                    cap_val
-from preprocess_tokenize_captions import calc_max_length
-from preprocess_encode_images import load_image, image_features_extracter
-from model import CNN_Encoder, RNN_Decoder
-
-from params import embedding_dim, units, vocab_size, attention_features_shape, \
-                    CHECKPOINT_PATH
-
-# Calculates the max_length, which is used to store the attention weights
-max_length = calc_max_length(tokenizer.texts_to_sequences(train_captions))
+from train_data_preparation import tokenizer, train_max_length
+from params import attention_features_shape, IMGS_FEATURES_CACHE_DIR_VAL
 
 
-encoder = CNN_Encoder(embedding_dim)
-decoder = RNN_Decoder(embedding_dim, units, vocab_size)
-optimizer = tf.keras.optimizers.Adam()
-
-ckpt = tf.train.Checkpoint(encoder=encoder,
-                           decoder=decoder,
-                           optimizer = optimizer)
-ckpt_manager = tf.train.CheckpointManager(ckpt, CHECKPOINT_PATH, max_to_keep=5)
-
-if ckpt_manager.latest_checkpoint:
-  # restoring the latest checkpoint in checkpoint_path
-  ckpt.restore(ckpt_manager.latest_checkpoint)
-
-
-def evaluate(image):
-    attention_plot = np.zeros((max_length, attention_features_shape))
+def evaluate(image, encoder, decoder):
+    attention_plot = np.zeros((train_max_length, attention_features_shape))
 
     hidden = decoder.reset_state(batch_size=1)
 
-    temp_input = tf.expand_dims(load_image(image)[0], 0)
-    image_features_extract_model = image_features_extracter()
-    img_tensor_val = image_features_extract_model(temp_input)
-    img_tensor_val = tf.reshape(img_tensor_val, (img_tensor_val.shape[0], -1, img_tensor_val.shape[3]))
+    img_feature_filename = IMGS_FEATURES_CACHE_DIR_VAL + \
+                        image.split('/')[-1] + '.npy'
+
+    img_tensor_val = np.load(img_feature_filename)
+
 
     features = encoder(img_tensor_val)
 
@@ -47,7 +23,7 @@ def evaluate(image):
     result = []
 
     for i in range(max_length):
-        predictions, hidden, attention_weights = decoder(dec_input, features, hidden)
+        predictions, hidden, attention_weights = decoder((dec_input, features, hidden))
 
         attention_plot[i] = tf.reshape(attention_weights, (-1, )).numpy()
 
@@ -78,14 +54,3 @@ def plot_attention(image, result, attention_plot):
 
     plt.tight_layout()
     plt.show()
-
-
-# captions on the validation set
-rid = np.random.randint(0, len(img_name_val))
-image = img_name_val[rid]
-real_caption = ' '.join([tokenizer.index_word[i] for i in cap_val[rid] if i not in [0]])
-result, attention_plot = evaluate(image)
-
-print ('Real Caption:', real_caption)
-print ('Prediction Caption:', ' '.join(result))
-plot_attention(image, result, attention_plot)
