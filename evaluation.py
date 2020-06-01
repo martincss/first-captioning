@@ -28,9 +28,9 @@ def generate_captions_single(image, encoder, decoder):
         attention_plot[i] = tf.reshape(attention_weights, (-1, )).numpy()
 
         predicted_id = tf.random.categorical(predictions, 1)[0][0].numpy()
-        result.append(tokenizer.index_word[predicted_id])
+        result.append(tokenizer.index_word.get(predicted_id))
 
-        if tokenizer.index_word[predicted_id] == '<end>':
+        if tokenizer.index_word.get(predicted_id) == '<end>':
             return result, attention_plot
 
         dec_input = tf.expand_dims([predicted_id], 0)

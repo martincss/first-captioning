@@ -26,8 +26,7 @@ def train(hparams):
 
     embedding_dim = hparams['embedding_dim']
     units = hparams['units']
-    vocab_size = hparams['vocab_size']
-
+    
     encoder = CNN_Encoder(embedding_dim)
     decoder = RNN_Decoder(embedding_dim, units, vocab_size)
 
