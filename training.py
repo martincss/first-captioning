@@ -6,7 +6,8 @@ import numpy as np
 from train_data_preparation import tokenizer, dataset_train
 from model import CNN_Encoder, RNN_Decoder
 
-from params import EPOCHS, CHECKPOINT_PATH, MODELS_PATH, num_examples, BATCH_SIZE
+from params import EPOCHS, CHECKPOINT_PATH, MODELS_PATH, num_examples, \
+                   BATCH_SIZE, vocab_size
 
 
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
@@ -23,10 +24,23 @@ def loss_function(real, pred):
 
 
 def train(hparams):
+    """
+
+    Returns:
+        results: dict
+            dictionary containing model identifier, elapsed_time per epoch,
+            learning curve with loss and metrics
+        models: tuple of keras Models
+            the trained encoder and decoder networks
+
+
+    """
 
     embedding_dim = hparams['embedding_dim']
     units = hparams['units']
-    
+
+    model_id = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+
     encoder = CNN_Encoder(embedding_dim)
     decoder = RNN_Decoder(embedding_dim, units, vocab_size)
 
@@ -43,11 +57,6 @@ def train(hparams):
     #   start_epoch = int(ckpt_manager.latest_checkpoint.split('-')[-1])
     #   # restoring the latest checkpoint in checkpoint_path
     #   ckpt.restore(ckpt_manager.latest_checkpoint)
-
-    # adding this in a separate cell because if you run the training cell
-    # many times, the loss_plot array will be reset
-    loss_plot = []
-
 
     @tf.function
     def train_step(img_tensor, target):
@@ -83,6 +92,9 @@ def train(hparams):
 
     num_steps = num_examples // BATCH_SIZE
 
+    loss_plot = []
+    epoch_times = []
+
     start = time.time()
     for epoch in range(start_epoch, EPOCHS):
         epoch_start = time.time()
@@ -97,7 +109,9 @@ def train(hparams):
                   epoch + 1, batch, batch_loss.numpy() / int(target.shape[1])),
                   file=sys.stdout)
         # storing the epoch end loss value to plot later
-        loss_plot.append(total_loss / num_steps)
+        loss_plot.append(float(total_loss.numpy()) / num_steps)
+        epoch_stop = time.time() - epoch_start
+        epoch_times.append(epoch_stop)
 
         if epoch % 1 == 0:
           ckpt_manager.save()
@@ -105,14 +119,16 @@ def train(hparams):
         print ('Epoch {} Loss {:.6f}'.format(epoch + 1,
                                              total_loss/num_steps),
                                              file=sys.stdout)
-        print ('Time taken for 1 epoch {} sec\n'.format(time.time() - epoch_start),
+        print ('Time taken for 1 epoch {} sec\n'.format(epoch_stop),
                 file=sys.stdout)
 
     total_time = time.time() - start
 
-    model_id = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    results = {'id':model_id, 'loss':loss_plot, 'time':epoch_times,
+                'total_time':total_time}
 
     encoder.save_weights(MODELS_PATH + 'encoder_' + model_id + '.h5')
     decoder.save_weights(MODELS_PATH + 'decoder_' + model_id + '.h5')
+    models = (encoder, decoder)
 
-    return model_id, total_time, encoder, decoder
+    return results, models

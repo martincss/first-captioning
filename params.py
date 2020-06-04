@@ -38,7 +38,10 @@ else:
 
 
 # Choose the top 5000 words from the vocabulary
-top_k = 5000
+if running_on_cluster:
+    top_k = 5000
+else:
+    top_k = 100
 
 
 # Model
