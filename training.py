@@ -2,6 +2,7 @@ import tensorflow as tf
 import time
 import datetime
 import sys
+import logging
 import numpy as np
 from train_data_preparation import tokenizer, dataset_train
 from model import CNN_Encoder, RNN_Decoder
@@ -23,7 +24,7 @@ def loss_function(real, pred):
   return tf.reduce_mean(loss_)
 
 
-def train(hparams):
+def train(hparams, models_path = './'):
     """
 
     Returns:
@@ -39,7 +40,7 @@ def train(hparams):
     model_id = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
     encoder = CNN_Encoder(**hparams['encoder'])
-    decoder = RNN_Decoder(**hparams['decoder'])
+    decoder = RNN_Decoder(**hparams['decoder'], vocab_size=vocab_size)
 
     optimizer = tf.keras.optimizers.Adam()
 
@@ -93,6 +94,7 @@ def train(hparams):
     epoch_times = []
 
     start = time.time()
+    logging.info('Training start for model ' + model_id)
     for epoch in range(start_epoch, EPOCHS):
         epoch_start = time.time()
         total_loss = 0
@@ -102,9 +104,9 @@ def train(hparams):
             total_loss += t_loss
 
             if batch % 100 == 0:
-                print ('Epoch {} Batch {} Loss {:.4f}'.format(
-                  epoch + 1, batch, batch_loss.numpy() / int(target.shape[1])),
-                  file=sys.stdout)
+                logging.info('Epoch {} Batch {} Loss {:.4f}'.format(
+                  epoch + 1, batch, batch_loss.numpy() / int(target.shape[1])))
+
         # storing the epoch end loss value to plot later
         loss_plot.append(float(total_loss.numpy()) / num_steps)
         epoch_stop = time.time() - epoch_start
@@ -113,19 +115,19 @@ def train(hparams):
         if epoch % 1 == 0:
           ckpt_manager.save()
 
-        print ('Epoch {} Loss {:.6f}'.format(epoch + 1,
-                                             total_loss/num_steps),
-                                             file=sys.stdout)
-        print ('Time taken for 1 epoch {} sec\n'.format(epoch_stop),
-                file=sys.stdout)
+        logging.info('Epoch {} Loss {:.6f}'.format(epoch + 1,
+                                             total_loss/num_steps))
+
+        logging.info('Time taken for 1 epoch {} sec\n'.format(epoch_stop))
 
     total_time = time.time() - start
+    logging.info('Total training time: {}'.format(total_time))
 
     results = {'id':model_id, 'loss':loss_plot, 'time':epoch_times,
                 'total_time':total_time}
 
-    encoder.save_weights(MODELS_PATH + 'encoder_' + model_id + '.h5')
-    decoder.save_weights(MODELS_PATH + 'decoder_' + model_id + '.h5')
+    encoder.save_weights(models_path + 'encoder_' + model_id + '.h5')
+    decoder.save_weights(models_path + 'decoder_' + model_id + '.h5')
     models = (encoder, decoder)
 
     return results, models

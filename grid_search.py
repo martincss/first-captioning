@@ -1,13 +1,16 @@
+import logging
 import numpy as np
 from sklearn.model_selection import ParameterGrid
+import datetime
 import json
+import os
 from nltk.translate.bleu_score import sentence_bleu
 
 from training import train
 from valid_data_preparation import img_paths_val, val_captions
 from evaluation import generate_captions_all
 
-from params import BATCH_SIZE, MODELS_PATH, RESULTS_PATH
+from params import BATCH_SIZE, MODELS_PATH, RESULTS_PATH, GRID_SEARCHS_PATH
 from hyperparameters_space import grid
 
 def split_hparams(hparams):
@@ -19,10 +22,30 @@ def split_hparams(hparams):
 
     return hparams_by_type
 
+def create_directories(search_name=None):
+
+    if search_name is None:
+        search_name = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+
+    grid_dir = GRID_SEARCHS_PATH + search_name
+
+    os.mkdir(grid_dir)
+    os.mkdir(grid_dir + '/saved_models/')
+    os.mkdir(grid_dir + '/results/')
+
+    return grid_dir
+
+search_name = 'testy'
 
 for hparams in ParameterGrid(grid):
 
-    train_results, models = train(hparams)
+    grid_dir = create_directories()
+
+    logging.basicConfig(filename = grid_dir + '/log.log',
+                        format='%(levelname)s:%(message)s', level=logging.INFO)
+
+    train_results, models = train(split_hparams(hparams),
+                                  models_path = grid_dir + '/saved_models/')
     encoder, decoder = models
 
     predictions = generate_captions_all(img_paths_val, encoder, decoder)
@@ -33,7 +56,7 @@ for hparams in ParameterGrid(grid):
 
     results = {**hparams, **train_results}
     results['bleu-4'] = np.mean(scores)
-    fname =  RESULTS_PATH + 'results_' + results['id'] + '.json'
+    fname =  grid_dir + '/results/' + 'results_' + results['id'] + '.json'
 
     with open(fname, 'w') as f:
         json.dump(results, f)

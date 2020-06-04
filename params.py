@@ -31,7 +31,7 @@ ANNOTATION_FILE_VAL = working_directory + '/annotations/captions_val2014.json'
 # set
 if running_on_cluster():
     num_examples = 30000
-    num_examples_val = 1000
+    num_examples_val = 200
 else:
     num_examples = 1000
     num_examples_val = 100
@@ -41,7 +41,7 @@ else:
 if running_on_cluster:
     top_k = 5000
 else:
-    top_k = 100
+    top_k = 50
 
 
 # Model
@@ -63,6 +63,7 @@ BUFFER_SIZE = 1000
 CHECKPOINT_PATH = working_directory + "/checkpoints/train"
 MODELS_PATH = working_directory + '/saved_models/'
 RESULTS_PATH = working_directory + '/search_results/'
+GRID_SEARCHS_PATH = working_directory + '/grid_searchs/'
 
 # Shape of the vector extracted from InceptionV3 is (64, 2048)
 # These two variables represent that vector shape
