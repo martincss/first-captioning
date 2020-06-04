@@ -10,6 +10,14 @@ from evaluation import generate_captions_all
 from params import BATCH_SIZE, MODELS_PATH, RESULTS_PATH
 from hyperparameters_space import grid
 
+def split_hparams(hparams):
+
+    hparams_by_type = {}
+    hparams_by_type['encoder'] = {'embedding_dim': hparams['embedding_dim']}
+    hparams_by_type['decoder'] = {'embedding_dim': hparams['embedding_dim'],
+                                  'units': hparams['units']}
+
+    return hparams_by_type
 
 
 for hparams in ParameterGrid(grid):

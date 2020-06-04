@@ -36,13 +36,10 @@ def train(hparams):
 
     """
 
-    embedding_dim = hparams['embedding_dim']
-    units = hparams['units']
-
     model_id = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    encoder = CNN_Encoder(embedding_dim)
-    decoder = RNN_Decoder(embedding_dim, units, vocab_size)
+    encoder = CNN_Encoder(**hparams['encoder'])
+    decoder = RNN_Decoder(**hparams['decoder'])
 
     optimizer = tf.keras.optimizers.Adam()
 
