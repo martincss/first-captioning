@@ -29,5 +29,5 @@ if __name__ == '__main__':
             CHECKPOINT_PATH, GRID_SEARCHS_PATH]
 
     for directory in dirs:
-        if not os.path.exists(dir):
+        if not os.path.exists(directory):
             os.mkdir(directory)
