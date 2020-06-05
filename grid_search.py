@@ -44,7 +44,7 @@ for hparams in ParameterGrid(grid):
     grid_dir = create_directories()
 
     reload(logging)
-    logging.basicConfig(filename = grid_dir + '/log.log',
+    logging.basicConfig(filename = grid_dir + '/progress.log',
                         format='%(levelname)s:%(message)s', level=logging.INFO)
 
     train_results, models = train(split_hparams(hparams),

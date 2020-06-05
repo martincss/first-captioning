@@ -8,8 +8,8 @@ import numpy as np
 from train_data_preparation import tokenizer, dataset_train
 from model import CNN_Encoder, RNN_Decoder
 
-from params import EPOCHS, CHECKPOINT_PATH, num_examples, \
-                   BATCH_SIZE, vocab_size
+from params import BATCH_SIZE, EPOCHS, num_examples, vocab_size
+from config import CHECKPOINT_PATH
 
 
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(

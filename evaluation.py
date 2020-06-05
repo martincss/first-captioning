@@ -3,7 +3,9 @@ import numpy as np
 from PIL import Image
 
 from train_data_preparation import tokenizer, train_max_length
-from params import attention_features_shape, IMGS_FEATURES_CACHE_DIR_VAL
+
+from params import attention_features_shape
+from config import IMGS_FEATURES_CACHE_DIR_VAL
 
 
 def generate_captions_single(image, encoder, decoder):

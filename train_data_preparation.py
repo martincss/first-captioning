@@ -6,9 +6,10 @@ from preprocess_tokenize_captions import make_tokenizer, caption_features, \
                                          calc_max_length
 from data_preparation import image_fnames_captions, create_dataset
 
-from params import ANNOTATION_FILE_TRAIN, IMGS_PATH_TRAIN, UPDATE_CACHE, \
-                   IMGS_FEATURES_CACHE_DIR_TRAIN, \
-                   num_examples, top_k
+from params import UPDATE_CACHE, num_examples, top_k
+from config import ANNOTATION_FILE_TRAIN, IMGS_PATH_TRAIN, \
+                   IMGS_FEATURES_CACHE_DIR_TRAIN
+
 
 
 

@@ -4,10 +4,10 @@ from preprocess_tokenize_captions import caption_features
 from data_preparation import image_fnames_captions, create_dataset
 from train_data_preparation import tokenizer
 
-from params import ANNOTATION_FILE_VAL, IMGS_PATH_VAL, UPDATE_CACHE, \
-                   IMGS_FEATURES_CACHE_DIR_VAL, \
-                   num_examples_val, top_k
+from params import UPDATE_CACHE, num_examples_val, top_k
 
+from config import ANNOTATION_FILE_VAL, IMGS_PATH_VAL, \
+                   IMGS_FEATURES_CACHE_DIR_VAL
 
 enable_gpu_memory_growth()
 
