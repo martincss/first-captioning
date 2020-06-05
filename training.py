@@ -4,10 +4,11 @@ import datetime
 import sys
 import logging
 import numpy as np
+
 from train_data_preparation import tokenizer, dataset_train
 from model import CNN_Encoder, RNN_Decoder
 
-from params import EPOCHS, CHECKPOINT_PATH, MODELS_PATH, num_examples, \
+from params import EPOCHS, CHECKPOINT_PATH, num_examples, \
                    BATCH_SIZE, vocab_size
 
 
@@ -95,6 +96,7 @@ def train(hparams, models_path = './'):
 
     start = time.time()
     logging.info('Training start for model ' + model_id)
+    logging.info('hparams: ' + str(hparams))
     for epoch in range(start_epoch, EPOCHS):
         epoch_start = time.time()
         total_loss = 0

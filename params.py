@@ -54,11 +54,13 @@ vocab_size = top_k + 1
 if running_on_cluster():
     BATCH_SIZE = 64
     EPOCHS = 20
+    BUFFER_SIZE = 1000
 else:
     BATCH_SIZE = 16
     EPOCHS = 2
+    BUFFER_SIZE = 100
 
-BUFFER_SIZE = 1000
+
 
 CHECKPOINT_PATH = working_directory + "/checkpoints/train"
 MODELS_PATH = working_directory + '/saved_models/'

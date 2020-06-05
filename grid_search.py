@@ -1,16 +1,18 @@
-import logging
-import numpy as np
-from sklearn.model_selection import ParameterGrid
-import datetime
-import json
 import os
+import datetime
+import logging
+import json
+import numpy as np
+
+from importlib import reload
+from sklearn.model_selection import ParameterGrid
 from nltk.translate.bleu_score import sentence_bleu
 
 from training import train
 from valid_data_preparation import img_paths_val, val_captions
 from evaluation import generate_captions_all
 
-from params import BATCH_SIZE, MODELS_PATH, RESULTS_PATH, GRID_SEARCHS_PATH
+from params import BATCH_SIZE, GRID_SEARCHS_PATH
 from hyperparameters_space import grid
 
 def split_hparams(hparams):
@@ -41,6 +43,7 @@ for hparams in ParameterGrid(grid):
 
     grid_dir = create_directories()
 
+    reload(logging)
     logging.basicConfig(filename = grid_dir + '/log.log',
                         format='%(levelname)s:%(message)s', level=logging.INFO)
 
