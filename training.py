@@ -126,7 +126,9 @@ def train(hparams, models_path = './'):
     logging.info('Total training time: {}'.format(total_time))
 
     results = {'id':model_id, 'loss':loss_plot, 'time':epoch_times,
-                'total_time':total_time}
+                'total_time':total_time,
+                'encoder_params': encoder.count_params(),
+                'decoder_params': decoder.count_params()}
 
     encoder.save_weights(models_path + 'encoder_' + model_id + '.h5')
     decoder.save_weights(models_path + 'decoder_' + model_id + '.h5')
