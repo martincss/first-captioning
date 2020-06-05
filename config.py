@@ -22,3 +22,12 @@ CHECKPOINT_PATH = working_directory + "/checkpoints/train"
 #MODELS_PATH = working_directory + '/saved_models/'
 #RESULTS_PATH = working_directory + '/search_results/'
 GRID_SEARCHS_PATH = working_directory + '/grid_searchs/'
+
+if __name__ == '__main__':
+    
+    dirs = [IMGS_FEATURES_CACHE_DIR_TRAIN, IMGS_FEATURES_CACHE_DIR_VAL,
+            CHECKPOINT_PATH, GRID_SEARCHS_PATH]
+
+    for directory in dirs:
+        if not os.path.exists(dir):
+            os.mkdir(directory)
