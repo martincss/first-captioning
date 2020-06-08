@@ -7,7 +7,7 @@ def load_encoder(fname, embedding_dim, batch_size=BATCH_SIZE,
                  features1=attention_features_shape, features2=features_shape):
 
     encoder = CNN_Encoder(embedding_dim)
-    encoder.build(input_shape = (batch_size, features1, features2))
+    encoder.build((batch_size, features1, features2))
     encoder.load_weights(fname)
 
     return encoder

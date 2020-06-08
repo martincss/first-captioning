@@ -1,17 +1,23 @@
 import tensorflow as tf
 import numpy as np
 from PIL import Image
+import matplotlib.pyplot as plt
+plt.ion()
 
+from preprocess_encode_images import extract_cache_features
 from train_data_preparation import tokenizer, train_max_length
 
 from params import attention_features_shape
 from config import IMGS_FEATURES_CACHE_DIR_VAL
 
 
-def generate_captions_single(image, encoder, decoder):
+def generate_captions_single(image, encoder, decoder, extract_features = False):
     attention_plot = np.zeros((train_max_length, attention_features_shape))
 
     hidden = decoder.reset_state(batch_size=1)
+
+    if extract_features:
+        extract_cache_features(image, IMGS_FEATURES_CACHE_DIR_VAL)
 
     img_feature_filename = IMGS_FEATURES_CACHE_DIR_VAL + \
                         image.split('/')[-1] + '.npy'
