@@ -58,7 +58,7 @@ for hparams in ParameterGrid(grid):
     for prediction, reference in zip(predictions, val_captions):
         scores.append(sentence_bleu(references=[reference], hypothesis=prediction))
 
-    results = {**hparams, **train_results}
+    results = {**split_hparams(hparams), **train_results}
     results['bleu-4'] = np.mean(scores)
     fname =  grid_dir + '/results/' + 'results_' + results['id'] + '.json'
 

@@ -8,7 +8,8 @@ import numpy as np
 from train_data_preparation import tokenizer, dataset_train
 from model import CNN_Encoder, RNN_Decoder
 
-from params import BATCH_SIZE, EPOCHS, num_examples, vocab_size
+from params import BATCH_SIZE, EPOCHS, num_examples, num_examples_val, \
+                   vocab_size
 from config import CHECKPOINT_PATH
 
 
@@ -128,7 +129,12 @@ def train(hparams, models_path = './'):
     results = {'id':model_id, 'loss':loss_plot, 'time':epoch_times,
                 'total_time':total_time,
                 'encoder_params': encoder.count_params(),
-                'decoder_params': decoder.count_params()}
+                'decoder_params': decoder.count_params(),
+                'instances_train': num_examples,
+                'instances_valid': num_examples_val,
+                'batch_size': BATCH_SIZE,
+                'epochs': EPOCHS,
+                'vocabulary': vocab_size}
 
     encoder.save_weights(models_path + 'encoder_' + model_id + '.h5')
     decoder.save_weights(models_path + 'decoder_' + model_id + '.h5')
