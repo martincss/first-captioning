@@ -1,8 +1,8 @@
-
+search_name = None
 
 grid = [
         {
-        'embedding_dim': [256],
-        'units': [512]
+        'embedding_dim': [64],
+        'units': [64]
         }
         ]

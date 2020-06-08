@@ -14,7 +14,7 @@ from evaluation import generate_captions_all
 
 from params import BATCH_SIZE
 from config import GRID_SEARCHS_PATH
-from hyperparameters_space import grid
+from hyperparameters_space import grid, search_name
 
 def split_hparams(hparams):
 
@@ -38,12 +38,12 @@ def create_directories(search_name=None):
 
     return grid_dir
 
-search_name = 'testy'
+
+grid_dir = create_directories(search_name)
 
 for hparams in ParameterGrid(grid):
 
-    grid_dir = create_directories()
-
+    # this is done because other packages use logging first
     reload(logging)
     logging.basicConfig(filename = grid_dir + '/progress.log',
                         format='%(levelname)s:%(message)s', level=logging.INFO)
