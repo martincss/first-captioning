@@ -6,7 +6,6 @@ import numpy as np
 
 from importlib import reload
 from sklearn.model_selection import ParameterGrid
-from nltk.translate.bleu_score import sentence_bleu
 
 from training import train
 from valid_data_preparation import img_paths_val, val_captions
@@ -52,14 +51,7 @@ for hparams in ParameterGrid(grid):
                                   models_path = grid_dir + '/saved_models/')
     encoder, decoder = models
 
-    predictions = generate_captions_all(img_paths_val, encoder, decoder)
-
-    scores = []
-    for prediction, reference in zip(predictions, val_captions):
-        scores.append(sentence_bleu(references=[reference], hypothesis=prediction))
-
     results = {**split_hparams(hparams), **train_results}
-    results['bleu-4'] = np.mean(scores)
     fname =  grid_dir + '/results/' + 'results_' + results['id'] + '.json'
 
     with open(fname, 'w') as f:

@@ -6,11 +6,13 @@ import logging
 import numpy as np
 
 from train_data_preparation import tokenizer, dataset_train
+from valid_data_preparation import img_paths_val, cap_val, val_captions
 from model import CNN_Encoder, RNN_Decoder
+from evaluation import predict_all, all_scores_all
 
 from params import BATCH_SIZE, EPOCHS, num_examples, num_examples_val, \
                    vocab_size
-from config import CHECKPOINT_PATH
+from config import CHECKPOINT_PATH, IMGS_FEATURES_CACHE_DIR_VAL
 
 
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
@@ -62,16 +64,18 @@ def train(hparams, models_path = './'):
     def train_step(img_tensor, target):
       loss = 0
 
+      batch_size, caption_length = target.shape
+
       # initializing the hidden state for each batch
       # because the captions are not related from image to image
-      hidden = decoder.reset_state(batch_size=target.shape[0])
+      hidden = decoder.reset_state(batch_size = batch_size)
 
-      dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
+      dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * batch_size, 1)
 
       with tf.GradientTape() as tape:
           features = encoder(img_tensor)
 
-          for i in range(1, target.shape[1]):
+          for i in range(1, caption_length):
               # passing the features through the decoder
               predictions, hidden, _ = decoder((dec_input, features, hidden))
 
@@ -93,6 +97,8 @@ def train(hparams, models_path = './'):
     num_steps = num_examples // BATCH_SIZE
 
     loss_plot = []
+    metrics = {'cross-entropy':[], 'bleu-1':[],'bleu-2':[],'bleu-3':[],
+               'bleu-4':[], 'meteor':[]}
     epoch_times = []
 
     start = time.time()
@@ -112,6 +118,22 @@ def train(hparams, models_path = './'):
 
         # storing the epoch end loss value to plot later
         loss_plot.append(float(total_loss.numpy()) / num_steps)
+
+        # predict values on validation set and evaluate metrics:
+        pred_logits, pred_captions = predict_all(img_paths_val,
+                                                 (encoder, decoder),
+                                                 IMGS_FEATURES_CACHE_DIR_VAL,
+                                                 tokenizer)
+
+        epoch_scores = all_scores_all(pred_logits,
+                                        pred_captions,
+                                        cap_val,
+                                        val_captions,
+                                        loss_function)
+
+        for name, score in epoch_scores.items():
+            metrics[name].append(score)
+
         epoch_stop = time.time() - epoch_start
         epoch_times.append(epoch_stop)
 
@@ -134,7 +156,8 @@ def train(hparams, models_path = './'):
                 'instances_valid': num_examples_val,
                 'batch_size': BATCH_SIZE,
                 'epochs': EPOCHS,
-                'vocabulary': vocab_size}
+                'vocabulary': vocab_size,
+                'metrics': metrics}
 
     encoder.save_weights(models_path + 'encoder_' + model_id + '.h5')
     decoder.save_weights(models_path + 'decoder_' + model_id + '.h5')
