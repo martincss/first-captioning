@@ -10,16 +10,24 @@ def bleu_n(predictions, references, n):
     """
 
     Params:
-        predictions, references: list of strings
+        predictions, references: list of captions, each caption as a list of strings
 
     """
 
     weights = {1: (1,), 2: (1/2, 1/2), 3:(1/3, 1/3, 1/3), 4:(1/4, 1/4, 1/4, 1/4)}
 
-    score = sentence_bleu(references=[reference], hypothesis=prediction,
-                          weights = weights[n])
+    scores = []
 
-    return score
+    for pred, ref in zip(predictions, references):
+
+        scores.append(sentence_bleu(references=[ref], hypothesis=pred,
+                                    weights = weights[n]))
+
+    ## TODO: tidy up this shit
+    if len(scores) == 1:
+        return scores[0]
+
+    return scores
 
 
 def all_scores_single(predicted_logits, predicted_caption, val_cap_vector,
