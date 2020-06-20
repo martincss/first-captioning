@@ -1,10 +1,5 @@
 import tensorflow as tf
 import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
-plt.ion()
-from nltk.translate.bleu_score import sentence_bleu
-# from nltk.translate.meteor_score import meteor_score
 
 from preprocess_encode_images import extract_cache_features
 from train_data_preparation import tokenizer, train_max_length

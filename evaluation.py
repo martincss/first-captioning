@@ -1,4 +1,3 @@
-import tensorflow as tf
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -6,15 +5,14 @@ plt.ion()
 from nltk.translate.bleu_score import sentence_bleu
 # from nltk.translate.meteor_score import meteor_score
 
-from preprocess_encode_images import extract_cache_features
-from train_data_preparation import tokenizer, train_max_length
 
-from params import attention_features_shape
-from config import IMGS_FEATURES_CACHE_DIR_TRAIN, IMGS_FEATURES_CACHE_DIR_VAL
+def bleu_n(predictions, references, n):
+    """
 
+    Params:
+        predictions, references: list of strings
 
-
-def bleu_n(prediction, reference, n):
+    """
 
     weights = {1: (1,), 2: (1/2, 1/2), 3:(1/3, 1/3, 1/3), 4:(1/4, 1/4, 1/4, 1/4)}
 
