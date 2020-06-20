@@ -19,8 +19,8 @@ attention_features_shape = 64
 # This will only be used as a slicing index, so a value of -1 will use the full
 # set
 if running_on_cluster():
-    num_examples = 30000
-    num_examples_val = 200
+    num_examples = 50000
+    num_examples_val = 5000
 else:
     num_examples = 1000
     num_examples_val = 100
@@ -40,10 +40,12 @@ vocab_size = top_k + 1
 
 # Training
 if running_on_cluster():
-    BATCH_SIZE = 64
-    EPOCHS = 20
+    BATCH_SIZE = 32
+    EPOCHS = 40
     BUFFER_SIZE = 1000
+    VALID_BATCH_SIZE = 128
 else:
     BATCH_SIZE = 16
     EPOCHS = 2
     BUFFER_SIZE = 100
+    VALID_BATCH_SIZE = 16
