@@ -92,6 +92,58 @@ def predict_all(img_paths, models, image_features_dir, tokenizer):
     return all_logits, all_captions
 
 
+def predict_batch(img_tensor_batch, models, tokenizer, train_max_length):
+    """
+    Predicts logits for the probability distribution of words, for the whole
+    caption.
+
+    Params:
+        img_tensor_batch: tensor of shape (batch_size, 64, 2048) (latter two
+            are attention_features_shape and features_shape from InceptionV3)
+
+        models: tuple of (encoder, decoder)
+
+        tokenizer: trained on train_captions
+
+        train_max_length: int
+            longest caption length in training dataset (all captions are padded
+                to this length)
+
+    Returns:
+        logits: tensor of shape (batch_size, vocab_size, train_max_length)
+            contains logits for each word and each instance on the batch
+    
+
+    """
+
+    batch_size = img_tensor_batch.shape[0]
+    encoder, decoder = models
+
+    features_batch = encoder(img_tensor_batch)
+
+    hidden = decoder.reset_state(batch_size = batch_size)
+    dec_input = tf.expand_dims([tokenizer.word_index['<start>']]*batch_size, 1)
+
+    logits = []
+    captions = []
+
+    # forces to predict up to caption_length
+    for i in range(train_max_length):
+
+        # not using attention_weights here
+        predictions, hidden, _ = decoder((dec_input, features_batch, hidden))
+
+        logits.append(predictions)
+        predicted_id = tf.random.categorical(predictions, 1)
+        # caption.append(tokenizer.index_word.get(predicted_id))
+
+        dec_input = predicted_id
+
+    logits = tf.stack(logits, axis=2)
+
+    return logits
+
+
 
 
 def translate_into_captions(logits, tokenizer):
