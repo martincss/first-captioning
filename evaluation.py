@@ -5,6 +5,7 @@ plt.ion()
 from nltk.translate.bleu_score import sentence_bleu
 # from nltk.translate.meteor_score import meteor_score
 
+from caption_generation import predict_batch
 
 def bleu_n(predictions, references, n):
     """
@@ -64,6 +65,26 @@ def all_scores_all(predicted_logits_all, predicted_captions, val_cap_vectors,
             scores_accum[name].append(score)
 
     return {name:np.mean(score) for name, score in scores_accum.items()}
+
+
+def validation_scores(dataset, models, tokenizer):
+
+
+    for (batch, (img_tensors, cap_vectors, captions)) in enumerate(dataset):
+
+        caption_length = cap_vectors.shape[1]
+
+        batch_logits = predict_batch(img_tensors, models, tokenizer, caption_length)
+
+        for step in range(caption_length):
+
+        pass
+
+
+
+
+
+
 
 
 def plot_attention(image, result, attention_plot):
