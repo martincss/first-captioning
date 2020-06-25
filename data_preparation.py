@@ -83,11 +83,11 @@ def create_dataset_valid(image_paths, tokenized_captions, captions,
         # return img_tensor, cap_vector, split_caption
         return img_tensor, cap_vector, caption
 
-    captions_tensor = tf.ragged.constant(captions)
+    # captions_tensor = tf.ragged.constant(captions)
 
     dataset = tf.data.Dataset.from_tensor_slices((image_paths,
                                                   tokenized_captions,
-                                                  captions_tensor))
+                                                  captions))
 
     # Use map to load the numpy files in parallel
     dataset = dataset.map(lambda item1, item2, item3: tf.numpy_function(

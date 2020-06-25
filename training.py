@@ -6,7 +6,7 @@ import logging
 import numpy as np
 
 from train_data_preparation import tokenizer, dataset_train
-from valid_data_preparation import img_paths_val, cap_val, val_captions
+from valid_data_preparation import dataset_val
 from model import CNN_Encoder, RNN_Decoder
 from evaluation import predict_all, all_scores_all
 
@@ -19,13 +19,24 @@ loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
     from_logits=True, reduction='none')
 
 def loss_function(real, pred):
-  mask = tf.math.logical_not(tf.math.equal(real, 0))
-  loss_ = loss_object(real, pred)
+    """
 
-  mask = tf.cast(mask, dtype=loss_.dtype)
-  loss_ *= mask
+    Params:
+        real: tensor of shape (batch_size,)
+            contains the word indices for each caption word on the batch
 
-  return tf.reduce_mean(loss_)
+        pred: tensor of shape (batch_size, vocab_size)
+            contains logits distribution on the whole vocabulary for each word
+            on the batch
+
+    """
+    mask = tf.math.logical_not(tf.math.equal(real, 0))
+    loss_ = loss_object(real, pred)
+
+    mask = tf.cast(mask, dtype=loss_.dtype)
+    loss_ *= mask
+
+    return tf.reduce_mean(loss_)
 
 
 def train(hparams, models_path = './'):
@@ -120,16 +131,19 @@ def train(hparams, models_path = './'):
         loss_plot.append(float(total_loss.numpy()) / num_steps)
 
         # predict values on validation set and evaluate metrics:
-        pred_logits, pred_captions = predict_all(img_paths_val,
-                                                 (encoder, decoder),
-                                                 IMGS_FEATURES_CACHE_DIR_VAL,
-                                                 tokenizer)
 
-        epoch_scores = all_scores_all(pred_logits,
-                                        pred_captions,
-                                        cap_val,
-                                        val_captions,
-                                        loss_function)
+        #
+        #
+        # pred_logits, pred_captions = predict_all(img_paths_val,
+        #                                          (encoder, decoder),
+        #                                          IMGS_FEATURES_CACHE_DIR_VAL,
+        #                                          tokenizer)
+        #
+        # epoch_scores = all_scores_all(pred_logits,
+        #                                 pred_captions,
+        #                                 cap_val,
+        #                                 val_captions,
+        #                                 loss_function)
 
         for name, score in epoch_scores.items():
             metrics[name].append(score)

@@ -2,34 +2,10 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 plt.ion()
-from nltk.translate.bleu_score import sentence_bleu
-# from nltk.translate.meteor_score import meteor_score
+from metrics import bleu_n, BLEUMetric
 
 from caption_generation import predict_batch
-
-def bleu_n(predictions, references, n):
-    """
-
-    Params:
-        predictions, references: list of captions, each caption as a list of strings
-
-    """
-
-    weights = {1: (1,), 2: (1/2, 1/2), 3:(1/3, 1/3, 1/3), 4:(1/4, 1/4, 1/4, 1/4)}
-
-    scores = []
-
-    for pred, ref in zip(predictions, references):
-
-        scores.append(sentence_bleu(references=[ref], hypothesis=pred,
-                                    weights = weights[n]))
-
-    ## TODO: tidy up this shit
-    if len(scores) == 1:
-        return scores[0]
-
-    return scores
-
+from training import loss_function
 
 def all_scores_single(predicted_logits, predicted_caption, val_cap_vector,
                val_caption, lossf):
@@ -69,17 +45,37 @@ def all_scores_all(predicted_logits_all, predicted_captions, val_cap_vectors,
 
 def validation_scores(dataset, models, tokenizer):
 
+    score_funcs = {'cross-entropy': loss_function, 'bleu-1':BLEUMetric(n_gram=1)}
+    scores = {'cross-entropy': [], 'bleu-1':[]}
+
+    num_steps = float(tf.data.experimental.cardinality(dataset).numpy())
 
     for (batch, (img_tensors, cap_vectors, captions)) in enumerate(dataset):
 
+        batch_size = cap_vectors.shape[0]
         caption_length = cap_vectors.shape[1]
 
         batch_logits = predict_batch(img_tensors, models, tokenizer, caption_length)
+        batch_captions = [[] for _ in range(batch_size)]
 
         for step in range(caption_length):
 
-        pass
+            predicted_ids = tf.random.categorical(batch_logits[:,:,step], 1)
 
+            for i in range(batch_size):
+                next_word = tokenizer.index_word.get(predicted_ids[i,0].numpy())
+                batch_captions[i].append(next_word)
+
+        true_captions = [cap.decode('utf-8').split(' ')[1:-1] for cap in \
+                         captions.numpy().tolist()]
+
+        score_funcs['bleu-1'](batch_captions, true_captions)
+
+    m_result = float(score_funcs['bleu-1'].result().numpy())
+    scores['bleu-1'].append(m_result/num_steps)
+
+
+    return scores
 
 
 

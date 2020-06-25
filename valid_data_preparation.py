@@ -24,7 +24,7 @@ if UPDATE_CACHE:
 
 cap_vec_val = caption_features(val_captions, tokenizer, maxlen=train_max_length)
 
-val_captions = [cap.split(' ') for cap in val_captions]
+# val_captions = [cap.split(' ')[1:-1] for cap in val_captions]
 
 
 dataset_val = create_dataset_valid(img_paths_val, cap_vec_val, val_captions, \
