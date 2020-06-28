@@ -41,7 +41,7 @@ vocab_size = top_k + 1
 # Training
 if running_on_cluster():
     BATCH_SIZE = 32
-    EPOCHS = 40
+    EPOCHS = 20
     BUFFER_SIZE = 1000
     VALID_BATCH_SIZE = 128
 else:

@@ -31,7 +31,7 @@ img_paths = img_paths[:num_examples]
 if UPDATE_CACHE:
     extract_cache_features(img_paths, IMGS_FEATURES_CACHE_DIR_TRAIN)
 
-tokenizer = make_tokenizer(train_captions, top_k)
+tokenizer = make_tokenizer(all_captions, top_k)
 cap_vector = caption_features(train_captions, tokenizer)
 
 # Calculates the max_length, which is used to store the attention weights

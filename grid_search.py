@@ -8,8 +8,6 @@ from importlib import reload
 from sklearn.model_selection import ParameterGrid
 
 from training import train
-from valid_data_preparation import img_paths_val, val_captions
-from evaluation import generate_captions_all
 
 from params import BATCH_SIZE
 from config import GRID_SEARCHS_PATH

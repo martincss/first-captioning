@@ -8,11 +8,11 @@ import numpy as np
 from train_data_preparation import tokenizer, dataset_train
 from valid_data_preparation import dataset_val
 from model import CNN_Encoder, RNN_Decoder
-from evaluation import predict_all, all_scores_all
+from evaluation import validation_scores
 
 from params import BATCH_SIZE, EPOCHS, num_examples, num_examples_val, \
-                   vocab_size
-from config import CHECKPOINT_PATH, IMGS_FEATURES_CACHE_DIR_VAL
+                   vocab_size, VALID_BATCH_SIZE
+from config import CHECKPOINT_PATH
 
 
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
@@ -130,20 +130,7 @@ def train(hparams, models_path = './'):
         # storing the epoch end loss value to plot later
         loss_plot.append(float(total_loss.numpy()) / num_steps)
 
-        # predict values on validation set and evaluate metrics:
-
-        #
-        #
-        # pred_logits, pred_captions = predict_all(img_paths_val,
-        #                                          (encoder, decoder),
-        #                                          IMGS_FEATURES_CACHE_DIR_VAL,
-        #                                          tokenizer)
-        #
-        # epoch_scores = all_scores_all(pred_logits,
-        #                                 pred_captions,
-        #                                 cap_val,
-        #                                 val_captions,
-        #                                 loss_function)
+        epoch_scores = validation_scores(dataset_val, (encoder, decoder), tokenizer)
 
         for name, score in epoch_scores.items():
             metrics[name].append(score)
@@ -151,8 +138,8 @@ def train(hparams, models_path = './'):
         epoch_stop = time.time() - epoch_start
         epoch_times.append(epoch_stop)
 
-        if epoch % 1 == 0:
-          ckpt_manager.save()
+        # if epoch % 1 == 0:
+        #   ckpt_manager.save()
 
         logging.info('Epoch {} Loss {:.6f}'.format(epoch + 1,
                                              total_loss/num_steps))
@@ -171,7 +158,8 @@ def train(hparams, models_path = './'):
                 'batch_size': BATCH_SIZE,
                 'epochs': EPOCHS,
                 'vocabulary': vocab_size,
-                'metrics': metrics}
+                'valid_batch_size': VALID_BATCH_SIZE,
+                'metrics_val': metrics}
 
     encoder.save_weights(models_path + 'encoder_' + model_id + '.h5')
     decoder.save_weights(models_path + 'decoder_' + model_id + '.h5')
