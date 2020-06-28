@@ -1,11 +1,12 @@
 import numpy as np
+import tensorflow as tf
 from PIL import Image
 import matplotlib.pyplot as plt
 plt.ion()
-from metrics import bleu_n, BLEUMetric
+from metrics import BLEUMetric, CrossEntropyMetric, METEORMetric
 
 from caption_generation import predict_batch
-from training import loss_function
+# from training import loss_function
 
 def all_scores_single(predicted_logits, predicted_caption, val_cap_vector,
                val_caption, lossf):
@@ -15,7 +16,7 @@ def all_scores_single(predicted_logits, predicted_caption, val_cap_vector,
     scores['cross-entropy'] = float(lossf(val_cap_vector, predicted_logits).numpy())
 
     for n in range(1,5):
-        scores['bleu-' + str(n)] = bleu_n(reference=val_caption,
+        scores['bleu-' + str(n)] = BLEUMetric.bleu_n(reference=val_caption,
                                           prediction=predicted_caption,
                                           n=n)
     return scores
@@ -45,10 +46,12 @@ def all_scores_all(predicted_logits_all, predicted_captions, val_cap_vectors,
 
 def validation_scores(dataset, models, tokenizer):
 
-    score_funcs = {'cross-entropy': loss_function, 'bleu-1':BLEUMetric(n_gram=1)}
-    scores = {'cross-entropy': [], 'bleu-1':[]}
-
-    num_steps = float(tf.data.experimental.cardinality(dataset).numpy())
+    metrics = {'cross-entropy':CrossEntropyMetric(),
+               'bleu-1':BLEUMetric(n_gram=1),
+               'bleu-2':BLEUMetric(n_gram=2),
+               'bleu-3':BLEUMetric(n_gram=3),
+               'bleu-4':BLEUMetric(n_gram=4),
+               'meteor':METEORMetric()}
 
     for (batch, (img_tensors, cap_vectors, captions)) in enumerate(dataset):
 
@@ -58,24 +61,39 @@ def validation_scores(dataset, models, tokenizer):
         batch_logits = predict_batch(img_tensors, models, tokenizer, caption_length)
         batch_captions = [[] for _ in range(batch_size)]
 
+        # add predicted word to each caption in batch
         for step in range(caption_length):
 
             predicted_ids = tf.random.categorical(batch_logits[:,:,step], 1)
+            metrics['cross-entropy'](cap_vectors[:,step], batch_logits[:,:,step])
 
             for i in range(batch_size):
                 next_word = tokenizer.index_word.get(predicted_ids[i,0].numpy())
                 batch_captions[i].append(next_word)
 
+        # cut each caption up to the <end> token
+        for i in range(batch_size):
+            try:
+                end_index = batch_captions[i].index('<end>')
+
+            except ValueError:
+                end_index = len(batch_captions[i])
+
+            finally:
+                batch_captions[i] = batch_captions[i][:end_index]
+
         true_captions = [cap.decode('utf-8').split(' ')[1:-1] for cap in \
                          captions.numpy().tolist()]
 
-        score_funcs['bleu-1'](batch_captions, true_captions)
+        for name, metric in metrics.items():
+            if name != 'cross-entropy':
+                metrics[name](true_captions, batch_captions)
 
-    m_result = float(score_funcs['bleu-1'].result().numpy())
-    scores['bleu-1'].append(m_result/num_steps)
+    results = {}
+    for name, metric in metrics.items():
+        results[name] = float(metric.result().numpy())
 
-
-    return scores
+    return results
 
 
 
