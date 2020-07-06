@@ -45,7 +45,7 @@ if running_on_cluster():
     BUFFER_SIZE = 1000
     VALID_BATCH_SIZE = 128
 else:
-    BATCH_SIZE = 16
+    BATCH_SIZE = 4
     EPOCHS = 2
     BUFFER_SIZE = 100
     VALID_BATCH_SIZE = 16

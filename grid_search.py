@@ -19,6 +19,7 @@ def split_hparams(hparams):
     hparams_by_type['encoder'] = {'embedding_dim': hparams['embedding_dim']}
     hparams_by_type['decoder'] = {'embedding_dim': hparams['embedding_dim'],
                                   'units': hparams['units']}
+    hparams_by_type['train'] = {'lambda_reg': hparams['lambda_reg']}
 
     return hparams_by_type
 

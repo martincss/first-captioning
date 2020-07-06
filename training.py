@@ -11,7 +11,7 @@ from model import CNN_Encoder, RNN_Decoder
 from evaluation import validation_scores
 
 from params import BATCH_SIZE, EPOCHS, num_examples, num_examples_val, \
-                   vocab_size, VALID_BATCH_SIZE
+                   vocab_size, VALID_BATCH_SIZE, attention_features_shape
 from config import CHECKPOINT_PATH
 
 
@@ -59,6 +59,8 @@ def train(hparams, models_path = './'):
 
     optimizer = tf.keras.optimizers.Adam()
 
+    lambda_reg = hparams['train']['lambda_reg']
+
     # ckpt = tf.train.Checkpoint(encoder=encoder,
     #                            decoder=decoder,
     #                            optimizer = optimizer)
@@ -73,27 +75,38 @@ def train(hparams, models_path = './'):
 
     @tf.function
     def train_step(img_tensor, target):
-      loss = 0
+        loss = 0
 
-      batch_size, caption_length = target.shape
+        batch_size, caption_length = target.shape
 
-      # initializing the hidden state for each batch
-      # because the captions are not related from image to image
-      hidden = decoder.reset_state(batch_size = batch_size)
+        # initializing the hidden state for each batch
+        # because the captions are not related from image to image
+        hidden = decoder.reset_state(batch_size = batch_size)
 
-      dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * batch_size, 1)
+        dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * batch_size, 1)
+        # attention_plot = tf.Variable(tf.zeros((batch_size,
+        #                                      caption_length,
+        #                                      attention_features_shape)))
+        attention_plot = 0
 
-      with tf.GradientTape() as tape:
-          features = encoder(img_tensor)
+        with tf.GradientTape() as tape:
+            features = encoder(img_tensor)
 
-          for i in range(1, caption_length):
-              # passing the features through the decoder
-              predictions, hidden, _ = decoder((dec_input, features, hidden))
 
-              loss += loss_function(target[:, i], predictions)
+            for i in range(1, caption_length):
+                # passing the features through the decoder
+                predictions, hidden, attention_weights = decoder((dec_input, features, hidden))
+                attention_plot += \
+          tf.reshape(attention_weights, (batch_size, attention_features_shape))
 
-              # using teacher forcing
-              dec_input = tf.expand_dims(target[:, i], 1)
+                loss += loss_function(target[:, i], predictions)
+
+                # using teacher forcing
+                dec_input = tf.expand_dims(target[:, i], 1)
+
+
+            loss += lambda_reg * tf.reduce_sum((1 - attention_plot)**2)
+
 
       total_loss = (loss / int(target.shape[1]))
 
