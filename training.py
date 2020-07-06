@@ -59,10 +59,10 @@ def train(hparams, models_path = './'):
 
     optimizer = tf.keras.optimizers.Adam()
 
-    ckpt = tf.train.Checkpoint(encoder=encoder,
-                               decoder=decoder,
-                               optimizer = optimizer)
-    ckpt_manager = tf.train.CheckpointManager(ckpt, CHECKPOINT_PATH, max_to_keep=5)
+    # ckpt = tf.train.Checkpoint(encoder=encoder,
+    #                            decoder=decoder,
+    #                            optimizer = optimizer)
+    # ckpt_manager = tf.train.CheckpointManager(ckpt, CHECKPOINT_PATH, max_to_keep=5)
 
 
     start_epoch = 0
@@ -111,6 +111,7 @@ def train(hparams, models_path = './'):
     metrics = {'cross-entropy':[], 'bleu-1':[],'bleu-2':[],'bleu-3':[],
                'bleu-4':[], 'meteor':[]}
     epoch_times = []
+    val_epoch_times = []
 
     start = time.time()
     logging.info('Training start for model ' + model_id)
@@ -130,7 +131,11 @@ def train(hparams, models_path = './'):
         # storing the epoch end loss value to plot later
         loss_plot.append(float(total_loss.numpy()) / num_steps)
 
+        # Evaluate on validation
+        val_epoch_start = time.time()
         epoch_scores = validation_scores(dataset_val, (encoder, decoder), tokenizer)
+        val_epoch_stop = time.time() - val_epoch_start
+        val_epoch_times.append(val_epoch_stop)
 
         for name, score in epoch_scores.items():
             metrics[name].append(score)
@@ -149,7 +154,9 @@ def train(hparams, models_path = './'):
     total_time = time.time() - start
     logging.info('Total training time: {}'.format(total_time))
 
-    results = {'id':model_id, 'loss':loss_plot, 'time':epoch_times,
+    results = { 'id':model_id,
+                'loss':loss_plot,
+                'epoch_times':epoch_times,
                 'total_time':total_time,
                 'encoder_params': encoder.count_params(),
                 'decoder_params': decoder.count_params(),
@@ -159,6 +166,7 @@ def train(hparams, models_path = './'):
                 'epochs': EPOCHS,
                 'vocabulary': vocab_size,
                 'valid_batch_size': VALID_BATCH_SIZE,
+                'valid_epoch_times':val_epoch_times,
                 'metrics_val': metrics}
 
     encoder.save_weights(models_path + 'encoder_' + model_id + '.h5')
