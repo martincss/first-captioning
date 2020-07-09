@@ -1,12 +1,13 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Dense, Dropout, Embedding, GRU
+from tensorflow.keras.regularizers import l1_l2
 
 class BahdanauAttention(tf.keras.Model):
-    def __init__(self, units, p_dropout = 0):
+    def __init__(self, units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
         super(BahdanauAttention, self).__init__()
-        self.W1 = Dense(units)
-        self.W2 = Dense(units)
-        self.V = Dense(1)
+        self.W1 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg))
+        self.W2 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg))
+        self.V = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg))
         self.dropout = Dropout(p_dropout)
 
     # def build(self, batch_input_shape):
@@ -38,10 +39,10 @@ class BahdanauAttention(tf.keras.Model):
 class CNN_Encoder(tf.keras.Model):
     # Since you have already extracted the features and dumped it using pickle
     # This encoder passes those features through a Fully connected layer
-    def __init__(self, embedding_dim, p_dropout = 0):
+    def __init__(self, embedding_dim, p_dropout = 0, l1_reg = 0, l2_reg = 0):
         super(CNN_Encoder, self).__init__()
         # shape after fc == (batch_size, 64, embedding_dim)
-        self.fc = Dense(embedding_dim)
+        self.fc = Dense(embedding_dim, kernel_regularizer=l1_l2(l1_reg, l2_reg))
         self.dropout = Dropout(p_dropout)
 
     # def build(self, batch_input_shape):
@@ -55,19 +56,27 @@ class CNN_Encoder(tf.keras.Model):
 
 
 class RNN_Decoder(tf.keras.Model):
-    def __init__(self, embedding_dim, units, vocab_size, p_dropout = 0):
+    def __init__(self,
+                 embedding_dim,
+                 units,
+                 vocab_size,
+                 p_dropout = 0,
+                 l1_reg = 0,
+                 l2_reg = 0):
+                 
         super(RNN_Decoder, self).__init__()
         self.units = units
 
         self.embedding = Embedding(vocab_size, embedding_dim)
         self.gru = GRU(self.units,
-                       return_sequences=True,
-                       return_state=True,
-                       recurrent_initializer='glorot_uniform',
-                       dropout=p_dropout,
-                       recurrent_dropout=p_dropout)
-        self.fc1 = Dense(self.units)
-        self.fc2 = Dense(vocab_size)
+                       return_sequences = True,
+                       return_state = True,
+                       recurrent_initializer = 'glorot_uniform',
+                       dropout = p_dropout,
+                       recurrent_dropout = p_dropout,
+                       kernel_regularizer = l1_l2(l1_reg, l2_reg))
+        self.fc1 = Dense(self.units, kernel_regularizer=l1_l2(l1_reg, l2_reg))
+        self.fc2 = Dense(vocab_size, kernel_regularizer=l1_l2(l1_reg, l2_reg))
 
         self.attention = BahdanauAttention(self.units)
         self.dropout = Dropout(p_dropout)
