@@ -14,11 +14,25 @@ from config import GRID_SEARCHS_PATH
 from hyperparameters_space import grid, search_name
 
 def split_hparams(hparams):
+    """
+    Takes a dictionary of hyperparameters as provided by ParameterGrid and
+    segments it into groups according to their usage.
+
+    Params:
+        hparams: dict with each key containing a single value
+
+    Returns:
+        hparams_by_type: dict of dicts. Each item is a dictionary containing
+        the hyperparameters regarding their use (e.g. encoder, optimizer, etc.)
+
+    """
 
     hparams_by_type = {}
     hparams_by_type['encoder'] = {'embedding_dim': hparams['embedding_dim']}
     hparams_by_type['decoder'] = {'embedding_dim': hparams['embedding_dim'],
                                   'units': hparams['units']}
+    hparams_by_type['optimizer'] = {'optimizer': hparams['optimizer'],
+                                    'learning_rate': hparams['learning_rate']}
     hparams_by_type['train'] = {'lambda_reg': hparams['lambda_reg']}
 
     return hparams_by_type

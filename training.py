@@ -8,6 +8,7 @@ import numpy as np
 from train_data_preparation import tokenizer, dataset_train
 from valid_data_preparation import dataset_val
 from model import CNN_Encoder, RNN_Decoder
+from train_utils import make_optimizer
 from evaluation import validation_scores
 
 from params import BATCH_SIZE, EPOCHS, num_examples, num_examples_val, \
@@ -57,7 +58,7 @@ def train(hparams, models_path = './'):
     encoder = CNN_Encoder(**hparams['encoder'])
     decoder = RNN_Decoder(**hparams['decoder'], vocab_size=vocab_size)
 
-    optimizer = tf.keras.optimizers.Adam()
+    optimizer = make_optimizer(**hparams['optimizer'])
 
     lambda_reg = hparams['train']['lambda_reg']
 
@@ -97,26 +98,26 @@ def train(hparams, models_path = './'):
                 # passing the features through the decoder
                 predictions, hidden, attention_weights = decoder((dec_input, features, hidden))
                 attention_plot += \
-          tf.reshape(attention_weights, (batch_size, attention_features_shape))
+                tf.reshape(attention_weights, (batch_size, attention_features_shape))
 
                 loss += loss_function(target[:, i], predictions)
 
                 # using teacher forcing
                 dec_input = tf.expand_dims(target[:, i], 1)
 
-
+            # attention regularization loss
             loss += lambda_reg * tf.reduce_sum((1 - attention_plot)**2)
 
+        
+        total_loss = (loss / int(target.shape[1]))
 
-      total_loss = (loss / int(target.shape[1]))
+        trainable_variables = encoder.trainable_variables + decoder.trainable_variables
 
-      trainable_variables = encoder.trainable_variables + decoder.trainable_variables
+        gradients = tape.gradient(loss, trainable_variables)
 
-      gradients = tape.gradient(loss, trainable_variables)
+        optimizer.apply_gradients(zip(gradients, trainable_variables))
 
-      optimizer.apply_gradients(zip(gradients, trainable_variables))
-
-      return loss, total_loss
+        return loss, total_loss
 
     num_steps = num_examples // BATCH_SIZE
 
