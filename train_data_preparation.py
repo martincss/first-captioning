@@ -6,7 +6,7 @@ from preprocess_tokenize_captions import make_tokenizer, caption_features, \
                                          calc_max_length
 from data_preparation import image_fnames_captions, create_dataset
 
-from params import UPDATE_CACHE, num_examples, top_k
+from params import UPDATE_CACHE, num_examples, top_k, maxlen
 from config import ANNOTATION_FILE_TRAIN, IMGS_PATH_TRAIN, \
                    IMGS_FEATURES_CACHE_DIR_TRAIN
 
@@ -32,7 +32,7 @@ if UPDATE_CACHE:
     extract_cache_features(img_paths, IMGS_FEATURES_CACHE_DIR_TRAIN)
 
 tokenizer = make_tokenizer(all_captions, top_k)
-cap_vector = caption_features(train_captions, tokenizer)
+cap_vector = caption_features(train_captions, tokenizer, maxlen)
 
 # Calculates the max_length, which is used to store the attention weights
 train_max_length = calc_max_length(tokenizer.texts_to_sequences(train_captions))

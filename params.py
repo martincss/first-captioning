@@ -19,19 +19,26 @@ attention_features_shape = 64
 # This will only be used as a slicing index, so a value of -1 will use the full
 # set
 if running_on_cluster():
-    num_examples = 50000
+    num_examples = 30000
     num_examples_val = 5000
 else:
     num_examples = 1000
     num_examples_val = 100
 
+# Data preparation
+
+# Max length of sequences, has a huge gpu memory footprint due to the tracking
+# in gradient tape (when using the attention regularization)
 
 # Choose the vocabulary size, by selecting a the top k words by order of use
 # frequency
 if running_on_cluster:
     top_k = 5000
+    maxlen = None
+
 else:
     top_k = 50
+    maxlen = 5
 
 
 # Model
