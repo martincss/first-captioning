@@ -57,7 +57,7 @@ class BLEUMetric(Metric):
         super().__init__(**kwargs)
         self.n_gram = n_gram
         self.bleu = partial(self.bleu_n, n = self.n_gram)
-        self.total = self.add_weight("total", initializer="zeros")
+        self.total = self.add_weight("total", initializer="zeros", dtype=tf.float32)
         self.count = self.add_weight("count", initializer="zeros")
 
     def update_state(self, caps_true, caps_pred):
