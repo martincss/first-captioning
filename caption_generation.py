@@ -112,14 +112,14 @@ def predict_batch(img_tensor_batch, models, tokenizer, train_max_length):
     Returns:
         logits: tensor of shape (batch_size, vocab_size, train_max_length)
             contains logits for each word and each instance on the batch
-    
+
 
     """
 
     batch_size = img_tensor_batch.shape[0]
     encoder, decoder = models
 
-    features_batch = encoder(img_tensor_batch)
+    features_batch = encoder(img_tensor_batch, training = False)
 
     hidden = decoder.reset_state(batch_size = batch_size)
     dec_input = tf.expand_dims([tokenizer.word_index['<start>']]*batch_size, 1)
@@ -131,7 +131,7 @@ def predict_batch(img_tensor_batch, models, tokenizer, train_max_length):
     for i in range(train_max_length):
 
         # not using attention_weights here
-        predictions, hidden, _ = decoder((dec_input, features_batch, hidden))
+        predictions, hidden, _ = decoder((dec_input, features_batch, hidden), training = False)
 
         logits.append(predictions)
         predicted_id = tf.random.categorical(predictions, 1)

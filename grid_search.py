@@ -28,9 +28,15 @@ def split_hparams(hparams):
     """
 
     hparams_by_type = {}
-    hparams_by_type['encoder'] = {'embedding_dim': hparams['embedding_dim']}
+    hparams_by_type['encoder'] = {'embedding_dim': hparams['embedding_dim'],
+                                  'p_dropout':hparams['p_dropout'],
+                                  'l1_reg':hparams['l1_reg'],
+                                  'l2_reg':hparams['l2_reg']}
     hparams_by_type['decoder'] = {'embedding_dim': hparams['embedding_dim'],
-                                  'units': hparams['units']}
+                                  'units': hparams['units'],
+                                  'p_dropout':hparams['p_dropout'],
+                                  'l1_reg':hparams['l1_reg'],
+                                  'l2_reg':hparams['l2_reg']}
     hparams_by_type['optimizer'] = {'optimizer': hparams['optimizer'],
                                     'learning_rate': hparams['learning_rate']}
     hparams_by_type['train'] = {'lambda_reg': hparams['lambda_reg']}

@@ -91,12 +91,12 @@ def train(hparams, models_path = './'):
         attention_plot = 0
 
         with tf.GradientTape() as tape:
-            features = encoder(img_tensor)
+            features = encoder(img_tensor, training = True)
 
 
             for i in range(1, caption_length):
                 # passing the features through the decoder
-                predictions, hidden, attention_weights = decoder((dec_input, features, hidden))
+                predictions, hidden, attention_weights = decoder((dec_input, features, hidden), training = True)
                 attention_plot += \
                 tf.reshape(attention_weights, (batch_size, attention_features_shape))
 
@@ -108,7 +108,12 @@ def train(hparams, models_path = './'):
             # attention regularization loss
             loss += lambda_reg * tf.reduce_sum((1 - attention_plot)**2)
 
-        
+            # Weight decay losses
+            loss += tf.add_n(encoder.losses)
+            loss += tf.add_n(decoder.losses)
+
+
+
         total_loss = (loss / int(target.shape[1]))
 
         trainable_variables = encoder.trainable_variables + decoder.trainable_variables

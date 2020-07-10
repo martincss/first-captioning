@@ -13,7 +13,7 @@ class BahdanauAttention(tf.keras.Model):
     # def build(self, batch_input_shape):
 
 
-    def call(self, features, hidden):
+    def call(self, features, hidden, training):
         # features(CNN_encoder output) shape == (batch_size, 64, embedding_dim)
 
         # hidden shape == (batch_size, hidden_size)
@@ -22,12 +22,12 @@ class BahdanauAttention(tf.keras.Model):
 
         # score shape == (batch_size, 64, hidden_size)
         score = tf.nn.tanh(
-                            self.dropout(self.W1(features)) + \
-                            self.dropout(self.W2(hidden_with_time_axis)))
+                            self.dropout(self.W1(features), training) + \
+                            self.dropout(self.W2(hidden_with_time_axis), training))
 
         # attention_weights shape == (batch_size, 64, 1)
         # you get 1 at the last axis because you are applying score to self.V
-        attention_weights = tf.nn.softmax(self.dropout(self.V(score)), axis=1)
+        attention_weights = tf.nn.softmax(self.dropout(self.V(score), training), axis=1)
 
         # context_vector shape after sum == (batch_size, hidden_size)
         context_vector = attention_weights * features
@@ -48,9 +48,9 @@ class CNN_Encoder(tf.keras.Model):
     # def build(self, batch_input_shape):
     #     super().build(batch_input_shape)
 
-    def call(self, x):
+    def call(self, x, training):
         x = self.fc(x)
-        x = self.dropout(x)
+        x = self.dropout(x, training)
         x = tf.nn.relu(x)
         return x
 
@@ -63,7 +63,7 @@ class RNN_Decoder(tf.keras.Model):
                  p_dropout = 0,
                  l1_reg = 0,
                  l2_reg = 0):
-                 
+
         super(RNN_Decoder, self).__init__()
         self.units = units
 
@@ -78,15 +78,18 @@ class RNN_Decoder(tf.keras.Model):
         self.fc1 = Dense(self.units, kernel_regularizer=l1_l2(l1_reg, l2_reg))
         self.fc2 = Dense(vocab_size, kernel_regularizer=l1_l2(l1_reg, l2_reg))
 
-        self.attention = BahdanauAttention(self.units)
+        self.attention = BahdanauAttention(units=units,
+                                           p_dropout = p_dropout,
+                                           l1_reg = l1_reg,
+                                           l2_reg = l2_reg)
         self.dropout = Dropout(p_dropout)
 
-    def call(self, inputs):
+    def call(self, inputs, training):
 
         x, features, hidden = inputs
 
         # defining attention as a separate model
-        context_vector, attention_weights = self.attention(features, hidden)
+        context_vector, attention_weights = self.attention(features, hidden, training)
 
         # x shape after passing through embedding == (batch_size, 1, embedding_dim)
         x = self.embedding(x)
@@ -95,18 +98,18 @@ class RNN_Decoder(tf.keras.Model):
         x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
 
         # passing the concatenated vector to the GRU
-        output, state = self.gru(x)
+        output, state = self.gru(x, training = training)
 
         # shape == (batch_size, max_length, hidden_size)
         x = self.fc1(output)
-        x = self.dropout(x)
+        x = self.dropout(x, training)
 
         # x shape == (batch_size * max_length, hidden_size)
         x = tf.reshape(x, (-1, x.shape[2]))
 
         # output shape == (batch_size * max_length, vocab)
         x = self.fc2(x)
-        x = self.dropout(x)
+        x = self.dropout(x, training)
 
         return x, state, attention_weights
 
