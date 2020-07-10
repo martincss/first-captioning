@@ -73,7 +73,7 @@ class RNN_Decoder(tf.keras.Model):
                        return_state = True,
                        recurrent_initializer = 'glorot_uniform',
                        dropout = p_dropout,
-                       recurrent_dropout = p_dropout,
+                       # recurrent_dropout = p_dropout,
                        kernel_regularizer = l1_l2(l1_reg, l2_reg))
         self.fc1 = Dense(self.units, kernel_regularizer=l1_l2(l1_reg, l2_reg))
         self.fc2 = Dense(vocab_size, kernel_regularizer=l1_l2(l1_reg, l2_reg))
