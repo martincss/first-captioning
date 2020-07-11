@@ -62,8 +62,8 @@ class BLEUMetric(Metric):
 
     def update_state(self, caps_true, caps_pred):
 
-        metric = float(self.bleu(caps_pred, caps_true))
-        self.total.assign_add(tf.reduce_sum(metric))
+        metric = self.bleu(caps_pred, caps_true)
+        self.total.assign_add(tf.cast(tf.reduce_sum(metric)), tf.float32)
         self.count.assign_add(tf.cast(len(caps_true), tf.float32))
 
     def result(self):
@@ -114,10 +114,10 @@ class METEORMetric(Metric):
 
         metric = []
         for pred, ref in zip(caps_pred, caps_true):
-            metric.append(float(self.meteor(references = [' '.join(ref)],
-                                            hypothesis = ' '.join(pred))))
+            metric.append(self.meteor(references = [' '.join(ref)],
+                                      hypothesis = ' '.join(pred)))
 
-        self.total.assign_add(tf.reduce_sum(metric))
+        self.total.assign_add(tf.cast(tf.reduce_sum(metric), tf.float32))
         self.count.assign_add(tf.cast(len(caps_true), tf.float32))
 
     def result(self):
