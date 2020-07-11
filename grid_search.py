@@ -50,9 +50,10 @@ def create_directories(search_name=None):
 
     grid_dir = GRID_SEARCHS_PATH + search_name
 
-    os.mkdir(grid_dir)
-    os.mkdir(grid_dir + '/saved_models/')
-    os.mkdir(grid_dir + '/results/')
+    if not os.path.exists(grid_dir):
+        os.mkdir(grid_dir)
+        os.mkdir(grid_dir + '/saved_models/')
+        os.mkdir(grid_dir + '/results/')
 
     return grid_dir
 
