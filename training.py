@@ -77,6 +77,7 @@ def train(hparams, models_path = './'):
     @tf.function
     def train_step(img_tensor, target):
         loss = 0
+        losses = {}
 
         batch_size, caption_length = target.shape
 
@@ -105,16 +106,21 @@ def train(hparams, models_path = './'):
                 # using teacher forcing
                 dec_input = tf.expand_dims(target[:, i], 1)
 
+            losses['cross_entropy'] = float(loss.numpy()/caption_length)
+
             # attention regularization loss
-            loss += lambda_reg * tf.reduce_sum((1 - attention_plot)**2)
+            loss_attn_reg = lambda_reg * tf.reduce_sum((1 - attention_plot)**2)
+            losses['attention_reg'] = float(loss_reg_attn.numpy()/caption_length)
+            loss += loss_attn_reg
 
             # Weight decay losses
-            loss += tf.add_n(encoder.losses)
-            loss += tf.add_n(decoder.losses)
+            loss_weight_decay = tf.add_n(encoder.losses) + tf.add_n(decoder.losses)
+            losses['weight_decay'] = float(loss_weight_decay.numpy()/caption_length)
+            loss += loss_weight_decay
 
 
 
-        total_loss = (loss / int(target.shape[1]))
+        losses['total'] = (loss / caption_length)
 
         trainable_variables = encoder.trainable_variables + decoder.trainable_variables
 
@@ -122,11 +128,12 @@ def train(hparams, models_path = './'):
 
         optimizer.apply_gradients(zip(gradients, trainable_variables))
 
-        return loss, total_loss
+        return loss, losses
 
     num_steps = num_examples // BATCH_SIZE
 
-    loss_plot = []
+    loss_plots = {'cross_entropy':[], 'attention_reg':[], 'weight_decay':[],
+                  'total':[]}
     metrics = {'cross-entropy':[], 'bleu-1':[],'bleu-2':[],'bleu-3':[],
                'bleu-4':[], 'meteor':[]}
     epoch_times = []
@@ -137,18 +144,22 @@ def train(hparams, models_path = './'):
     logging.info('hparams: ' + str(hparams))
     for epoch in range(start_epoch, EPOCHS):
         epoch_start = time.time()
-        total_loss = 0
+        total_loss = {'cross_entropy':0, 'attention_reg':0, 'weight_decay':0,
+                      'total':0}
 
         for (batch, (img_tensor, target)) in enumerate(dataset_train):
             batch_loss, t_loss = train_step(img_tensor, target)
-            total_loss += t_loss
+            for key in total_loss.keys():
+                total_loss[key] += t_loss[key]
 
             if batch % 100 == 0:
                 logging.info('Epoch {} Batch {} Loss {:.4f}'.format(
                   epoch + 1, batch, batch_loss.numpy() / int(target.shape[1])))
 
         # storing the epoch end loss value to plot later
-        loss_plot.append(float(total_loss.numpy()) / num_steps)
+        for key in loss_plots.keys():
+            loss_plots[key].append(total_loss[key] / num_steps)
+            
 
         # Evaluate on validation
         val_epoch_start = time.time()
@@ -174,7 +185,7 @@ def train(hparams, models_path = './'):
     logging.info('Total training time: {}'.format(total_time))
 
     results = { 'id':model_id,
-                'loss':loss_plot,
+                'total_loss':loss_plot,
                 'epoch_times':epoch_times,
                 'total_time':total_time,
                 'encoder_params': encoder.count_params(),
