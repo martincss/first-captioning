@@ -159,7 +159,7 @@ def train(hparams, models_path = './'):
         # storing the epoch end loss value to plot later
         for key in loss_plots.keys():
             loss_plots[key].append(total_loss[key] / num_steps)
-            
+
 
         # Evaluate on validation
         val_epoch_start = time.time()
@@ -185,7 +185,7 @@ def train(hparams, models_path = './'):
     logging.info('Total training time: {}'.format(total_time))
 
     results = { 'id':model_id,
-                'total_loss':loss_plot,
+                'losses':loss_plots,
                 'epoch_times':epoch_times,
                 'total_time':total_time,
                 'encoder_params': encoder.count_params(),
