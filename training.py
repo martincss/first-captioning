@@ -106,21 +106,21 @@ def train(hparams, models_path = './'):
                 # using teacher forcing
                 dec_input = tf.expand_dims(target[:, i], 1)
 
-            losses['cross_entropy'] = float(loss.numpy()/caption_length)
+            losses['cross_entropy'] = loss/caption_length
 
             # attention regularization loss
             loss_attn_reg = lambda_reg * tf.reduce_sum((1 - attention_plot)**2)
-            losses['attention_reg'] = float(loss_reg_attn.numpy()/caption_length)
+            losses['attention_reg'] = loss_attn_reg/caption_length
             loss += loss_attn_reg
 
             # Weight decay losses
             loss_weight_decay = tf.add_n(encoder.losses) + tf.add_n(decoder.losses)
-            losses['weight_decay'] = float(loss_weight_decay.numpy()/caption_length)
+            losses['weight_decay'] = loss_weight_decay/caption_length
             loss += loss_weight_decay
 
 
 
-        losses['total'] = (loss / caption_length)
+        losses['total'] = loss/ caption_length
 
         trainable_variables = encoder.trainable_variables + decoder.trainable_variables
 
@@ -150,7 +150,7 @@ def train(hparams, models_path = './'):
         for (batch, (img_tensor, target)) in enumerate(dataset_train):
             batch_loss, t_loss = train_step(img_tensor, target)
             for key in total_loss.keys():
-                total_loss[key] += t_loss[key]
+                total_loss[key] += float(t_loss[key])
 
             if batch % 100 == 0:
                 logging.info('Epoch {} Batch {} Loss {:.4f}'.format(
@@ -177,7 +177,7 @@ def train(hparams, models_path = './'):
         #   ckpt_manager.save()
 
         logging.info('Epoch {} Loss {:.6f}'.format(epoch + 1,
-                                             total_loss/num_steps))
+                                             total_loss['total']/num_steps))
 
         logging.info('Time taken for 1 epoch {} sec\n'.format(epoch_stop))
 

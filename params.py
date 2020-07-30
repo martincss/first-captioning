@@ -32,7 +32,7 @@ else:
 
 # Choose the vocabulary size, by selecting a the top k words by order of use
 # frequency
-if running_on_cluster:
+if running_on_cluster():
     top_k = 5000
     maxlen = None
 

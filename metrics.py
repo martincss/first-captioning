@@ -63,7 +63,7 @@ class BLEUMetric(Metric):
     def update_state(self, caps_true, caps_pred):
 
         metric = self.bleu(caps_pred, caps_true)
-        self.total.assign_add(tf.cast(tf.reduce_sum(metric)), tf.float32)
+        self.total.assign_add(tf.cast(tf.reduce_sum(metric), tf.float32))
         self.count.assign_add(tf.cast(len(caps_true), tf.float32))
 
     def result(self):
