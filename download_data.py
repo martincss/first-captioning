@@ -40,28 +40,32 @@ def download_iuxray():
     iu_xray_dir.mkdir()
     os.chdir(iu_xray_dir)
 
-    # Download caption annotation files
-    # reports_folder = iu_xray_dir / ''
-    # image_train_folder = iu_xray_dir /'train2014'
-
     reports_url = 'https://openi.nlm.nih.gov/imgs/collections/NLMCXR_reports.tgz'
     images_url = 'https://openi.nlm.nih.gov/imgs/collections/NLMCXR_png.tgz'
 
-    labels = ['report', 'image']
-    files = ['reports.tgz', 'images.tgz']
-    urls = [reports_url, images_url]
 
-    for label, file, url in zip(labels, files, urls):
+    print('Downloading report files')
 
-        # if not folder.exists():
+    zip_file = tf.keras.utils.get_file('reports.tgz',
+                                      cache_subdir=iu_xray_dir,
+                                      origin = reports_url,
+                                      extract = True)
+    os.remove(zip_file)
+    (iu_xray_dir / 'ecgen-radiology').rename('reports')
 
-        print('Downloading {} files'.format(label))
 
-        zip_file = tf.keras.utils.get_file(file,
-                                          cache_subdir=iu_xray_dir,
-                                          origin = url,
-                                          extract = True)
-        os.remove(zip_file)
+
+    print('Downloading image files')
+
+    images_dir = iu_xray_dir / 'images'
+    images_dir.mkdir()
+    os.chdir(images_dir)
+
+    zip_file = tf.keras.utils.get_file('images.tgz',
+                                      cache_subdir=iu_xray_dir,
+                                      origin = images_url,
+                                      extract = True)
+    os.remove(zip_file)
 
 
 
