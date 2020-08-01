@@ -9,9 +9,9 @@ def download_coco():
     os.chdir(coco_dir)
 
     # Download caption annotation files
-    # annotation_folder = coco_dir / 'annotations'
-    # image_train_folder = coco_dir /'train2014'
-    # image_validation_folder = coco_dir / 'validation2014'
+    annotation_folder = coco_dir / 'annotations'
+    image_train_folder = coco_dir /'train2014'
+    image_validation_folder = coco_dir / 'validation2014'
 
     captions_url = 'http://images.cocodataset.org/annotations/annotations_trainval2014.zip'
     train_url = 'http://images.cocodataset.org/zips/train2014.zip'
@@ -34,5 +34,37 @@ def download_coco():
                                               extract = True)
             os.remove(zip_file)
 
+def download_iuxray():
+
+    iu_xray_dir = Path(__file__).resolve().parent / 'IU X-ray'
+    iu_xray_dir.mkdir()
+    os.chdir(iu_xray_dir)
+
+    # Download caption annotation files
+    # reports_folder = iu_xray_dir / ''
+    # image_train_folder = iu_xray_dir /'train2014'
+
+    reports_url = 'https://openi.nlm.nih.gov/imgs/collections/NLMCXR_reports.tgz'
+    images_url = 'https://openi.nlm.nih.gov/imgs/collections/NLMCXR_png.tgz'
+
+    labels = ['report', 'image']
+    files = ['reports.tgz', 'images.tgz']
+    urls = [reports_url, images_url]
+
+    for label, file, url in zip(labels, files, urls):
+
+        # if not folder.exists():
+
+        print('Downloading {} files'.format(label))
+
+        zip_file = tf.keras.utils.get_file(file,
+                                          cache_subdir=iu_xray_dir,
+                                          origin = url,
+                                          extract = True)
+        os.remove(zip_file)
+
+
+
 if __name__ == '__main__':
-    download_coco()
+    # download_coco()
+    download_iuxray()
