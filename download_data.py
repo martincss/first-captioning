@@ -1,46 +1,38 @@
 import os
+from pathlib import Path
 import tensorflow as tf
 
-# Download caption annotation files
-annotation_folder = '/annotations/'
-image_train_folder = '/train2014/'
-image_validation_folder = '/validation2014/'
+def download_coco():
 
-captions_url = 'http://images.cocodataset.org/annotations/annotations_trainval2014.zip'
-train_url = 'http://images.cocodataset.org/zips/train2014.zip'
-valid_url = 'http://images.cocodataset.org/zips/val2014.zip'
+    coco_dir = Path(__file__).resolve().parent / 'COCO'
+    coco_dir.mkdir()
+    os.chdir(coco_dir)
 
+    # Download caption annotation files
+    # annotation_folder = coco_dir / 'annotations'
+    # image_train_folder = coco_dir /'train2014'
+    # image_validation_folder = coco_dir / 'validation2014'
 
-# Download annotation files
-if not os.path.exists(os.path.abspath('.') + annotation_folder):
+    captions_url = 'http://images.cocodataset.org/annotations/annotations_trainval2014.zip'
+    train_url = 'http://images.cocodataset.org/zips/train2014.zip'
+    valid_url = 'http://images.cocodataset.org/zips/val2014.zip'
 
-    print('Downloading annotation files')
+    dirs = [annotation_folder, image_train_folder, image_validation_folder]
+    labels = ['annonation', 'image training', 'image validation']
+    files = ['captions.zip', 'train2014.zip', 'val2014.zip']
+    urls = [captions_url, train_url, valid_url]
 
-    annotation_zip = tf.keras.utils.get_file('captions.zip',
-                                          cache_subdir=os.path.abspath('.'),
-                                          origin = captions_url,
-                                          extract = True)
-    os.remove(annotation_zip)
+    for folder, label, file, url in zip(dirs, labels, files, urls):
 
-# Download image files
-if not os.path.exists(os.path.abspath('.') + image_train_folder):
+        if not folder.exists():
 
-    print('Downloading image training files')
+            print('Downloading {} files'.format(label))
 
-    image_zip = tf.keras.utils.get_file('train2014.zip',
-                                      cache_subdir=os.path.abspath('.'),
-                                      origin = train_url,
-                                      extract = True)
-    os.remove(image_zip)
+            zip_file = tf.keras.utils.get_file(file,
+                                              cache_subdir=coco_dir,
+                                              origin = url,
+                                              extract = True)
+            os.remove(zip_file)
 
-
-if not os.path.exists(os.path.abspath('.') + image_validation_folder):
-
-    print('Downloading image validation files')
-
-    image_zip = tf.keras.utils.get_file('val2014.zip',
-                                      cache_subdir=os.path.abspath('.'),
-                                      origin = valid_url,
-                                      extract = True)
-
-    os.remove(image_zip)
+if __name__ == '__main__':
+    download_coco()
