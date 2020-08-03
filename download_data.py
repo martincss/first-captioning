@@ -62,7 +62,7 @@ def download_iuxray():
     os.chdir(images_dir)
 
     zip_file = tf.keras.utils.get_file('images.tgz',
-                                      cache_subdir=iu_xray_dir,
+                                      cache_subdir=images_dir,
                                       origin = images_url,
                                       extract = True)
     os.remove(zip_file)

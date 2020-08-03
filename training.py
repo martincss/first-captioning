@@ -89,17 +89,17 @@ def train(hparams, models_path = './'):
         # attention_plot = tf.Variable(tf.zeros((batch_size,
         #                                      caption_length,
         #                                      attention_features_shape)))
-        attention_plot = 0
+
 
         with tf.GradientTape() as tape:
-            features = encoder(img_tensor, training = True)
 
+            features = encoder(img_tensor, training = True)
+            attention_sum = tf.zeros((batch_size, attention_features_shape, 1))
 
             for i in range(1, caption_length):
                 # passing the features through the decoder
                 predictions, hidden, attention_weights = decoder((dec_input, features, hidden), training = True)
-                attention_plot += \
-                tf.reshape(attention_weights, (batch_size, attention_features_shape))
+                attention_sum += attention_weights
 
                 loss += loss_function(target[:, i], predictions)
 
@@ -109,7 +109,7 @@ def train(hparams, models_path = './'):
             losses['cross_entropy'] = loss/caption_length
 
             # attention regularization loss
-            loss_attn_reg = lambda_reg * tf.reduce_sum((1 - attention_plot)**2)
+            loss_attn_reg = lambda_reg * tf.reduce_sum((1 - attention_sum)**2)
             losses['attention_reg'] = loss_attn_reg/caption_length
             loss += loss_attn_reg
 
@@ -178,6 +178,7 @@ def train(hparams, models_path = './'):
 
         logging.info('Epoch {} Loss {:.6f}'.format(epoch + 1,
                                              total_loss['total']/num_steps))
+
 
         logging.info('Time taken for 1 epoch {} sec\n'.format(epoch_stop))
 
