@@ -31,8 +31,8 @@ def image_fnames_captions(captions_file, images_dir, partition):
     for annot in annotations['annotations']:
         caption = '<start> ' + annot['caption'] + ' <end>'
         image_id = annot['image_id']
-        full_coco_image_path = images_dir + 'COCO_{}2014_'.format(partition) + \
-                               '{:012d}.jpg'.format(image_id)
+        full_coco_image_path = images_dir / ('COCO_{}2014_'.format(partition) + \
+                               '{:012d}.jpg'.format(image_id))
 
         all_img_paths.append(full_coco_image_path)
         all_captions.append(caption)
@@ -47,12 +47,14 @@ def create_dataset(image_paths, tokenized_captions, img_features_dir):
     """
 
     def map_func(img_name, cap):
-        img_feature_filename = img_features_dir + \
-                            img_name.decode('utf-8').split('/')[-1] + '.npy'
+        img_feature_filename = img_features_dir / \
+                            (img_name.decode('utf-8').split('/')[-1] + '.npy')
 
         img_tensor = np.load(img_feature_filename)
         return img_tensor, cap
 
+    # from pathlib paths to strings
+    image_paths = [str(path) for path in image_paths]
 
     dataset = tf.data.Dataset.from_tensor_slices((image_paths, tokenized_captions))
 
@@ -73,8 +75,8 @@ def create_dataset_valid(image_paths, tokenized_captions, captions,
 
 
     def map_func(img_name, cap_vector, caption):
-        img_feature_filename = img_features_dir + \
-                            img_name.decode('utf-8').split('/')[-1] + '.npy'
+        img_feature_filename = img_features_dir / \
+                            (img_name.decode('utf-8').split('/')[-1] + '.npy')
 
         img_tensor = np.load(img_feature_filename)
 
@@ -84,6 +86,9 @@ def create_dataset_valid(image_paths, tokenized_captions, captions,
         return img_tensor, cap_vector, caption
 
     # captions_tensor = tf.ragged.constant(captions)
+
+    # from pathlib paths to strings
+    image_paths = [str(path) for path in image_paths]
 
     dataset = tf.data.Dataset.from_tensor_slices((image_paths,
                                                   tokenized_captions,
