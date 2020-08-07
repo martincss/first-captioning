@@ -36,6 +36,24 @@ def get_report(fname):
 
 
 def generate_image_caption_pairs(base_dir, save_to_json=False):
+    """
+    Reads through all xml reports and extracts images and captions for each one,
+    putting them together in an image-caption dictionary.
+
+    Each caption joins both "IMPRESSION" and "FINDINGS" sections.
+
+    Params
+        base_dir: Path
+            path to the IU X-ray directory, containing an 'images' and 'reports'
+            folders
+        save_to_json: boolean
+            option to save the image-caption dict to a json file on base_dir
+
+    Returns
+        img_caption_pairs: dict
+            dictionary mapping each full image path to its caption
+
+    """
 
     images_dir = base_dir / 'images'
     reports_dir = base_dir / 'reports'
