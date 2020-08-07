@@ -1,8 +1,14 @@
 import tensorflow as tf
 import numpy as np
+import json
+
 from tqdm import tqdm
 
+from config import DATASET_NAME, DIRECTORIES
 from params import CACHE_FEATURES_BATCH_SIZE
+
+from utils import enable_gpu_memory_growth
+from coco_utils import image_fnames_captions
 
 def load_image(image_path):
     """
@@ -93,5 +99,38 @@ def extract_cache_features(img_name_vector, cache_dir):
       for bf, p in zip(batch_features, path):
         # strips image directory from path and redirects to cache directory
         path_of_feature = p.numpy().decode("utf-8")
-        path_of_feature = cache_dir + path_of_feature.split('/')[-1]
+        path_of_feature = str(cache_dir) + path_of_feature.split('/')[-1]
         np.save(path_of_feature, bf.numpy())
+
+
+if __name__ == '__main__':
+
+    enable_gpu_memory_growth()
+
+    if DATASET_NAME == 'COCO':
+
+        print('Now caching image features for COCO train')
+
+        _, img_paths_train = image_fnames_captions(
+                                            DIRECTORIES['ANNOTATIONS_TRAIN'],
+                                            DIRECTORIES['IMAGES_TRAIN'],
+                                            partition = 'train')
+        extract_cache_features(img_paths_train, DIRECTORIES['IMAGE_FEATURES_TRAIN'])
+
+        print('Now caching image features for COCO val')
+
+        _, img_paths_val = image_fnames_captions(
+                                            DIRECTORIES['ANNOTATIONS_VAL'],
+                                            DIRECTORIES['IMAGES_VAL'],
+                                            partition = 'val')
+        extract_cache_features(img_paths_train, DIRECTORIES['IMAGE_FEATURES_VAL'])
+
+    elif DATASET_NAME == 'IU X-ray':
+
+        print('Now caching image features for IU X-ray')
+
+        with open(DIRECTORIES['ANNOTATIONS'], 'r') as f:
+            annotations = json.load(f)
+
+        img_paths = list(annotations.keys())
+        extract_cache_features(img_paths, DIRECTORIES['IMAGE_FEATURES'])
