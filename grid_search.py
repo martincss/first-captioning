@@ -48,12 +48,12 @@ def create_directories(search_name=None):
     if search_name is None:
         search_name = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    grid_dir = GRID_SEARCHS_PATH + search_name
+    grid_dir = GRID_SEARCHS_PATH / search_name
 
     if not os.path.exists(grid_dir):
-        os.mkdir(grid_dir)
-        os.mkdir(grid_dir + '/saved_models/')
-        os.mkdir(grid_dir + '/results/')
+        grid_dir.mkdir()
+        (grid_dir / 'saved_models').mkdir()
+        (grid_dir / 'results').mkdir()
 
     return grid_dir
 
@@ -64,15 +64,15 @@ for hparams in ParameterGrid(grid):
 
     # this is done because other packages use logging first
     reload(logging)
-    logging.basicConfig(filename = grid_dir + '/progress.log',
+    logging.basicConfig(filename = grid_dir / 'progress.log',
                         format='%(levelname)s:%(message)s', level=logging.INFO)
 
     train_results, models = train(split_hparams(hparams),
-                                  models_path = grid_dir + '/saved_models/')
+                                  models_path = grid_dir / 'saved_models')
     encoder, decoder = models
 
     results = {**split_hparams(hparams), **train_results}
-    fname =  grid_dir + '/results/' + 'results_' + results['id'] + '.json'
+    fname =  grid_dir / 'results' / ('results_' + results['id'] + '.json')
 
     with open(fname, 'w') as f:
         json.dump(results, f)

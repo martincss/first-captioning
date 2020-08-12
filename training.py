@@ -101,7 +101,7 @@ def train(hparams, models_path = './'):
                 predictions, hidden, attention_weights = decoder((dec_input, features, hidden), training = True)
                 attention_sum += attention_weights
 
-                loss += loss_function(target[:, i], predictions)
+                # loss += loss_function(target[:, i], predictions)
 
                 # using teacher forcing
                 dec_input = tf.expand_dims(target[:, i], 1)
@@ -200,8 +200,8 @@ def train(hparams, models_path = './'):
                 'valid_epoch_times':val_epoch_times,
                 'metrics_val': metrics}
 
-    encoder.save_weights(models_path + 'encoder_' + model_id + '.h5')
-    decoder.save_weights(models_path + 'decoder_' + model_id + '.h5')
+    encoder.save_weights(str(models_path) + ('encoder_' + model_id + '.h5'))
+    decoder.save_weights(str(models_path) + ('decoder_' + model_id + '.h5'))
     models = (encoder, decoder)
 
     return results, models
