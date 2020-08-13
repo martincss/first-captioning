@@ -1,6 +1,37 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, Dropout, Embedding, GRU
+from tensorflow.nn import tanh, softmax, sigmoid
+from tensorflow.keras import Model
+from tensorflow.keras.layers import Input, Dense, Dropout, Embedding, GRU
 from tensorflow.keras.regularizers import l1_l2
+
+from params import feature_vector_shape
+
+
+def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
+
+    W1 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg))
+    W2 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg))
+    V = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), activation='tanh')
+    f_beta = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), activation='sigmoid')
+    dropout = Dropout(p_dropout)
+
+    encoder_output = Input(feature_vector_shape)
+    hidden_last = Input(units)
+
+    score = V(dropout(W1(encoder_output)) + \
+              dropout(W2(tf.expand_dims(hidden_last, axis = 1))))
+
+    attention_weights = softmax(dropout(score), axis=1)
+
+    beta = dropout(f_beta(hidden_last))
+
+    context_vector = beta * attention_weights * encoder_output
+    context_vector = tf.reduce_sum(context_vector, axis=1)
+
+    return Model(inputs = [encoder_output, hidden_last],
+                 outputs = [context_vector, attention_weights])
+
+
 
 class BahdanauAttention(tf.keras.Model):
     def __init__(self, units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
