@@ -13,6 +13,7 @@ else:
 features_shape = 2048
 attention_features_shape = 64
 
+feature_vector_shape = (attention_features_shape, features_shape)
 
 
 # Select the number of instances for the training set
@@ -53,6 +54,6 @@ if running_on_cluster():
     VALID_BATCH_SIZE = 128
 else:
     BATCH_SIZE = 4
-    EPOCHS = 2
+    EPOCHS = 5
     BUFFER_SIZE = 100
     VALID_BATCH_SIZE = 16

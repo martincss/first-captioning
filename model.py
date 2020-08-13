@@ -9,17 +9,19 @@ from params import feature_vector_shape
 
 def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
-    W1 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg))
-    W2 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg))
-    V = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), activation='tanh')
-    f_beta = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), activation='sigmoid')
-    dropout = Dropout(p_dropout)
+    W1 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_feats')
+    W2 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_hidden')
+    V = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'V')
+    f_beta = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), activation='sigmoid', name = 'f_beta')
+    dropout = Dropout(p_dropout, name = 'dropout')
 
-    encoder_output = Input(feature_vector_shape)
-    hidden_last = Input(units)
+    encoder_output = Input(feature_vector_shape, name = 'image_features')
+    hidden_last = Input(units, name = 'last_hidden_state')
 
-    score = V(dropout(W1(encoder_output)) + \
-              dropout(W2(tf.expand_dims(hidden_last, axis = 1))))
+    score = V(tanh(
+                (dropout(W1(encoder_output)) + \
+                 dropout(W2(tf.expand_dims(hidden_last, axis = 1)))
+                 )))
 
     attention_weights = softmax(dropout(score), axis=1)
 
@@ -31,7 +33,8 @@ def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
     return Model(inputs = [encoder_output, hidden_last],
                  outputs = [context_vector, attention_weights])
 
-
+def get_decoder():
+    pass
 
 class BahdanauAttention(tf.keras.Model):
     def __init__(self, units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
