@@ -4,7 +4,7 @@ from tensorflow.keras import Model, Sequential
 from tensorflow.keras.layers import Input, Dense, Dropout, Embedding, LSTM, GRU
 from tensorflow.keras.regularizers import l1_l2
 
-from params import feature_vector_shape
+from params import feature_vector_shape, attention_features_shape
 
 
 def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
@@ -119,6 +119,8 @@ class Captioner(Model):
                  units,
                  vocab_size,
                  tokenizer,
+                 batch_size,
+                 caption_length,
                  p_dropout = 0,
                  l1_reg = 0,
                  l2_reg = 0,
@@ -131,20 +133,23 @@ class Captioner(Model):
                                     l1_reg, l2_reg)
         self.lambda_reg = lambda_reg
         self.tokenizer = tokenizer
+        self.batch_size = batch_size
+        self.caption_length = caption_length
 
 
     def compile(self, optimizer, loss_fn, metrics):
-        super(Decoder, self).compile()
+        super(Captioner, self).compile()
         self.optimizer = optimizer
         self.loss_fn = loss_fn
-        self.metrics = metrics
+        self.compiled_metrics = metrics
 
 
     def train_step(self, data):
 
         img_tensor, target = data
-        batch_size, caption_length = target.shape
-
+        # batch_size, caption_length = tf.shape(target)
+        batch_size = self.batch_size
+        caption_length = self.caption_length
         loss = 0
         losses = {}
 
@@ -154,7 +159,7 @@ class Captioner(Model):
             hidden = self.init_h(img_tensor)
             cell = self.init_c(img_tensor)
 
-            attention_sum = tf.zeros((batch_size, attention_features_shape, 1))
+            attention_sum = tf.zeros((batch_size, attention_features_shape))
 
             for i in range(1, caption_length):
 
@@ -164,9 +169,9 @@ class Captioner(Model):
                                                                     hidden,
                                                                     cell
                                                                     ])
-                # attention_sum += attention_weights
+                attention_sum += attention_weights
 
-                loss += loss_function(target[:, i], predictions)
+                loss += self.loss_fn(target[:, i], predictions)
 
             losses['cross_entropy'] = loss/caption_length
 
