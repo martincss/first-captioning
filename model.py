@@ -19,16 +19,17 @@ def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
     hidden_last = Input(units, name = 'last_hidden_state')
 
     score = V(tanh(
-                (dropout(W1(encoder_output)) + \
-                 dropout(W2(tf.expand_dims(hidden_last, axis = 1)))
-                 )))
+                    dropout(W1(encoder_output)) + \
+                    dropout(W2(tf.expand_dims(hidden_last, axis = 1)))
+                    ))
 
     attention_weights = softmax(dropout(score), axis=1)
 
-    beta = dropout(f_beta(hidden_last))
+    beta = dropout(f_beta(tf.expand_dims(hidden_last, axis = 1)))
 
     context_vector = beta * attention_weights * encoder_output
     context_vector = tf.reduce_sum(context_vector, axis=1)
+    attention_weights = tf.reduce_sum(attention_weights, axis=2)
 
     return Model(inputs = [encoder_output, hidden_last],
                  outputs = [context_vector, attention_weights], name = 'attention')
@@ -41,7 +42,8 @@ def get_decoder(embedding_dim,
                 l2_reg = 0):
 
     attention = get_attention(units, p_dropout, l1_reg, l2_reg)
-    embedding = Embedding(input_dim=vocab_size, output_dim=embedding_dim, name = 'embedding')
+    embedding = Embedding(input_dim=vocab_size, output_dim=embedding_dim,
+                          input_length = 1, name = 'embedding')
     lstm = LSTM(units,
                    # return_sequences = True,
                    return_state = True,
@@ -61,13 +63,28 @@ def get_decoder(embedding_dim,
     cell_last = Input(units, name = 'last_cell_state')
 
 
+    # see keras doc on Embedding layer: if input shape is (batch, input_length)
+    # then output shape is (batch, input_length, embedding_dim).
+    # In this case, input_length is always 1, so the embedded_word shape is
+    # (batch, 1, embedding_dim). We will use this axis 1 for the lstm input
     embedded_word = embedding(word_input)
+
     context_vector, attention_weights = attention([encoder_output, hidden_last])
 
-    lstm_output, hidden, cell = lstm(tf.concat([embedded_word, context_vector], axis = -1),
+    # RNN input shape must be (batch, time_steps, features). In our case,
+    # time_steps is 1, so we must expand the context vector dimensions
+    lstm_output, hidden, cell = lstm(tf.concat([
+                                        embedded_word,
+                                        tf.expand_dims(context_vector, axis=1)],
+                                        axis = -1),
                                 initial_state = [hidden_last, cell_last])
 
-    logits = dropout(logits_kernel(tf.concat([embedded_word, context_vector, lstm_output], axis=-1)))
+    # Now we finally drop the extra 1 axis in the embedded_word
+    logits = dropout(logits_kernel(tf.concat([tf.reduce_sum(embedded_word,
+                                                            axis=1),
+                                              context_vector,
+                                              lstm_output],
+                                              axis=-1)))
 
     return Model(inputs = [word_input, encoder_output, hidden_last, cell_last],
                  outputs = [logits, attention_weights, hidden, cell])
