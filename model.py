@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.nn import tanh, softmax, sigmoid
-from tensorflow.keras import Model
+from tensorflow.keras import Model, Sequential
 from tensorflow.keras.layers import Input, Dense, Dropout, Embedding, LSTM, GRU
 from tensorflow.keras.regularizers import l1_l2
 
@@ -33,6 +33,28 @@ def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     return Model(inputs = [encoder_output, hidden_last],
                  outputs = [context_vector, attention_weights], name = 'attention')
+
+
+def get_init_h(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
+
+    encoder_output = Input(feature_vector_shape, name = 'image_features')
+    init_h = Dense(units, name = 'init_h')
+
+    h_0 = Dropout(p_dropout)(init_h(tf.reduce_mean(encoder_output, axis=1)))
+
+    return Model(inputs = [encoder_output], outputs = [h_0], name = 'init_h')
+
+
+def get_init_c(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
+
+    encoder_output = Input(feature_vector_shape, name = 'image_features')
+    init_h = Dense(units, name = 'init_c')
+
+    c_0 = Dropout(p_dropout)(init_h(tf.reduce_mean(encoder_output, axis=1)))
+
+    return Model(inputs = [encoder_output], outputs = [c_0], name = 'init_c')
+
+
 
 def get_decoder(embedding_dim,
                 units,
@@ -88,6 +110,83 @@ def get_decoder(embedding_dim,
 
     return Model(inputs = [word_input, encoder_output, hidden_last, cell_last],
                  outputs = [logits, attention_weights, hidden, cell])
+
+
+class Captioner(Model):
+
+    def __init__(self,
+                 embedding_dim,
+                 units,
+                 vocab_size,
+                 tokenizer,
+                 p_dropout = 0,
+                 l1_reg = 0,
+                 l2_reg = 0,
+                 lambda_reg = 0.):
+
+        super(Captioner, self).__init__()
+        self.init_h = get_init_h(units, p_dropout , l1_reg, l2_reg)
+        self.init_c = get_init_c(units, p_dropout, l1_reg, l2_reg)
+        self.decoder = get_decoder(embedding_dim, units, vocab_size, p_dropout,
+                                    l1_reg, l2_reg)
+        self.lambda_reg = lambda_reg
+        self.tokenizer = tokenizer
+
+
+    def compile(self, optimizer, loss_fn, metrics):
+        super(Decoder, self).compile()
+        self.optimizer = optimizer
+        self.loss_fn = loss_fn
+        self.metrics = metrics
+
+
+    def train_step(self, data):
+
+        img_tensor, target = data
+        batch_size, caption_length = target.shape
+
+        loss = 0
+        losses = {}
+
+        with tf.GradientTape() as tape:
+
+            word = tf.expand_dims([self.tokenizer.word_index['<start>']] * batch_size, 1)
+            hidden = self.init_h(img_tensor)
+            cell = self.init_c(img_tensor)
+
+            attention_sum = tf.zeros((batch_size, attention_features_shape, 1))
+
+            for i in range(1, caption_length):
+
+                predictions, attention_weights, hidden, cell = self.decoder([
+                                                                    word,
+                                                                    img_tensor,
+                                                                    hidden,
+                                                                    cell
+                                                                    ])
+                # attention_sum += attention_weights
+
+                loss += loss_function(target[:, i], predictions)
+
+            losses['cross_entropy'] = loss/caption_length
+
+            # attention regularization loss
+            loss_attn_reg = self.lambda_reg * tf.reduce_sum((1 - attention_sum)**2)
+            losses['attention_reg'] = loss_attn_reg/caption_length
+            loss += loss_attn_reg
+
+            # Weight decay losses
+            loss_weight_decay = tf.add_n(self.decoder.losses)
+            losses['weight_decay'] = loss_weight_decay/caption_length
+            loss += loss_weight_decay
+
+
+        losses['total'] = loss/ caption_length
+
+        gradients = tape.gradient(loss, self.decoder.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.decoder.trainable_variables))
+
+        return losses
 
 
 
