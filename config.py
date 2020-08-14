@@ -8,7 +8,7 @@ os.chdir(script_dir)
 coco_dir = script_dir / 'COCO'
 iux_dir = script_dir / 'IU X-ray'
 
-DATASET_NAME = 'IU X-ray'
+DATASET_NAME = 'COCO'
 
 ALL_DIRECTORIES = {
 

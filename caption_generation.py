@@ -5,7 +5,7 @@ from preprocess_encode_images import extract_cache_features
 from train_data_preparation import tokenizer, train_max_length
 
 from params import attention_features_shape
-from config import IMGS_FEATURES_CACHE_DIR_TRAIN, IMGS_FEATURES_CACHE_DIR_VAL
+from config import DIRECTORIES
 
 
 def predict_single(image, models, image_features_dir, tokenizer,

@@ -4,19 +4,19 @@ from utils import enable_gpu_memory_growth
 from preprocess_encode_images import extract_cache_features
 from preprocess_tokenize_captions import make_tokenizer, caption_features, \
                                          calc_max_length
-from data_preparation import image_fnames_captions, create_dataset
+from coco_utils import image_fnames_captions
+from data_preparation import create_dataset
 
 from params import UPDATE_CACHE, num_examples, top_k, maxlen
-from config import ANNOTATION_FILE_TRAIN, IMGS_PATH_TRAIN, \
-                   IMGS_FEATURES_CACHE_DIR_TRAIN
+from config import DIRECTORIES
 
 
 
 
 enable_gpu_memory_growth()
 
-all_captions, all_img_paths = image_fnames_captions(ANNOTATION_FILE_TRAIN,
-                                                    IMGS_PATH_TRAIN,
+all_captions, all_img_paths = image_fnames_captions(DIRECTORIES['ANNOTATIONS_TRAIN'],
+                                                    DIRECTORIES['IMAGES_TRAIN'],
                                                     partition = 'train')
 
 # Shuffle captions and image_names together
@@ -42,4 +42,4 @@ img_paths_train, cap_train = img_paths, cap_vector
 
 
 dataset_train = create_dataset(img_paths_train, cap_train, \
-                               IMGS_FEATURES_CACHE_DIR_TRAIN)
+                               DIRECTORIES['IMAGE_FEATURES_TRAIN'])
