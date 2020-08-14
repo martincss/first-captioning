@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.nn import tanh, softmax, sigmoid
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Dense, Dropout, Embedding, GRU
+from tensorflow.keras.layers import Input, Dense, Dropout, Embedding, LSTM, GRU
 from tensorflow.keras.regularizers import l1_l2
 
 from params import feature_vector_shape
@@ -31,10 +31,48 @@ def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
     context_vector = tf.reduce_sum(context_vector, axis=1)
 
     return Model(inputs = [encoder_output, hidden_last],
-                 outputs = [context_vector, attention_weights])
+                 outputs = [context_vector, attention_weights], name = 'attention')
 
-def get_decoder():
-    pass
+def get_decoder(embedding_dim,
+                units,
+                vocab_size,
+                p_dropout = 0,
+                l1_reg = 0,
+                l2_reg = 0):
+
+    attention = get_attention(units, p_dropout, l1_reg, l2_reg)
+    embedding = Embedding(input_dim=vocab_size, output_dim=embedding_dim, name = 'embedding')
+    lstm = LSTM(units,
+                   # return_sequences = True,
+                   return_state = True,
+                   recurrent_initializer = 'glorot_uniform',
+                   dropout = p_dropout,
+                   # recurrent_dropout = p_dropout,
+                   kernel_regularizer = l1_l2(l1_reg, l2_reg))
+    logits_kernel = Dense(vocab_size,
+                          kernel_regularizer=l1_l2(l1_reg, l2_reg),
+                          name = 'logits_kernel')
+    dropout = Dropout(p_dropout, name = 'dropout')
+
+
+    word_input = Input(1, name = 'bow_input')
+    encoder_output = Input(feature_vector_shape, name = 'image_features')
+    hidden_last = Input(units, name = 'last_hidden_state')
+    cell_last = Input(units, name = 'last_cell_state')
+
+
+    embedded_word = embedding(word_input)
+    context_vector, attention_weights = attention([encoder_output, hidden_last])
+
+    lstm_output, hidden, cell = lstm(tf.concat([embedded_word, context_vector], axis = -1),
+                                initial_state = [hidden_last, cell_last])
+
+    logits = dropout(logits_kernel(tf.concat([embedded_word, context_vector, lstm_output], axis=-1)))
+
+    return Model(inputs = [word_input, encoder_output, hidden_last, cell_last],
+                 outputs = [logits, attention_weights, hidden, cell])
+
+
 
 class BahdanauAttention(tf.keras.Model):
     def __init__(self, units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
