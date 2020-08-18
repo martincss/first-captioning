@@ -60,11 +60,11 @@ class BLEUMetric(Metric):
         self.total = self.add_weight("total", initializer="zeros", dtype=tf.float32)
         self.count = self.add_weight("count", initializer="zeros")
 
-    def update_state(self, caps_true, caps_pred):
+    def update_state(self, y_true, y_pred):
 
-        metric = self.bleu(caps_pred, caps_true)
+        metric = self.bleu(y_pred, y_true)
         self.total.assign_add(tf.cast(tf.reduce_sum(metric), tf.float32))
-        self.count.assign_add(tf.cast(len(caps_true), tf.float32))
+        self.count.assign_add(tf.cast(len(y_true), tf.float32))
 
     def result(self):
         return self.total / self.count
@@ -110,19 +110,19 @@ class METEORMetric(Metric):
         self.total = self.add_weight("total", initializer="zeros")
         self.count = self.add_weight("count", initializer="zeros")
 
-    def update_state(self, caps_true, caps_pred):
+    def update_state(self, y_true, y_pred):
 
         metric = []
-        for pred, ref in zip(caps_pred, caps_true):
+        for pred, ref in zip(y_pred, y_true):
             metric.append(self.meteor(references = [' '.join(ref)],
                                       hypothesis = ' '.join(pred)))
 
         self.total.assign_add(tf.cast(tf.reduce_sum(metric), tf.float32))
-        self.count.assign_add(tf.cast(len(caps_true), tf.float32))
+        self.count.assign_add(tf.cast(len(y_true), tf.float32))
 
     def result(self):
         return self.total / self.count
 
     def get_config(self):
         base_config = super().get_config()
-        return {**base_config, 'alpha':alpha, 'beta':beta, 'gamma':gamma}
+        return {**base_config}#, 'alpha':self.alpha, 'beta':self.beta, 'gamma':self.gamma}
