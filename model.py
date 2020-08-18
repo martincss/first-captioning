@@ -121,6 +121,7 @@ class Captioner(Model):
                  tokenizer,
                  batch_size,
                  caption_length,
+                 valid_batch_size,
                  p_dropout = 0,
                  l1_reg = 0,
                  l2_reg = 0,
@@ -134,20 +135,25 @@ class Captioner(Model):
         self.lambda_reg = lambda_reg
         self.tokenizer = tokenizer
         self.batch_size = batch_size
+        self.valid_batch_size = valid_batch_size
         self.caption_length = caption_length
 
 
-    def compile(self, optimizer, loss_fn, metrics):
-        super(Captioner, self).compile()
-        self.optimizer = optimizer
-        self.loss_fn = loss_fn
-        self.compiled_metrics = metrics
+    def compile(self, optimizer, loss_fn, metrics, **kwargs):
+        super(Captioner, self).compile(optimizer=optimizer, loss=loss_fn, **kwargs)
+        # self.optimizer = optimizer
+        # self.loss_fn = loss_fn
+        self.word_metrics = metrics
 
-
+    @tf.function
     def train_step(self, data):
 
         img_tensor, target = data
-        # batch_size, caption_length = tf.shape(target)
+
+        # batch_size = int(tf.shape(target)[0])
+        # caption_length = int(tf.shape(target)[1])
+        #
+        # # batch_size, caption_length = tf.shape(target)
         batch_size = self.batch_size
         caption_length = self.caption_length
         loss = 0
@@ -168,10 +174,12 @@ class Captioner(Model):
                                                                     img_tensor,
                                                                     hidden,
                                                                     cell
-                                                                    ])
+                                                                    ],
+                                                                    training=True)
                 attention_sum += attention_weights
 
-                loss += self.loss_fn(target[:, i], predictions)
+                loss += self.compiled_loss(target[:, i], predictions)
+                word = tf.expand_dims(target[:, i], 1)
 
             losses['cross_entropy'] = loss/caption_length
 
@@ -192,6 +200,69 @@ class Captioner(Model):
         self.optimizer.apply_gradients(zip(gradients, self.decoder.trainable_variables))
 
         return losses
+
+
+    def call(self, inputs, training=None, **kwargs):
+
+        img_tensor = inputs
+        # batch_size = int(tf.shape(img_tensor)[0])
+        batch_size = self.valid_batch_size
+
+        logits = []
+        captions = [[] for _ in range(batch_size)]
+
+        word = tf.expand_dims([self.tokenizer.word_index['<start>']] * batch_size, 1)
+        hidden = self.init_h(img_tensor)
+        cell = self.init_c(img_tensor)
+
+        for i in range(1, self.caption_length):
+
+            predictions, attention_weights, hidden, cell = self.decoder([
+                                                                word,
+                                                                img_tensor,
+                                                                hidden,
+                                                                cell
+                                                                ], training)
+
+            logits.append(predictions)
+            word = tf.random.categorical(predictions, 1)
+
+            for i in range(batch_size):
+                next_word = self.tokenizer.index_word.get(int(word[i,0]))
+                captions[i].append(next_word)
+
+        # cut each caption up to the <end> token
+        for i in range(batch_size):
+            try:
+                end_index = captions[i].index('<end>')
+
+            except ValueError:
+                end_index = len(captions[i])
+
+            finally:
+                captions[i] = captions[i][:end_index]
+
+        logits = tf.stack(logits, axis=2)
+
+        return logits, captions
+
+
+
+    def test_step(self, data):
+
+        img_tensor, target, captions = data
+
+        logits, captions_pred = self(img_tensor, training=False)
+
+        captions_true = [cap.decode('utf-8').split(' ')[1:-1] for cap in \
+                         captions.numpy().tolist()]
+
+        # self.compiled_metrics.update_state(y_true=captions_true, y_pred=captions_pred)
+
+        for metric in self.word_metrics:
+            metric.update_state(y_true=captions_true, y_pred=captions_pred)
+
+        return {m.name: m.result() for m in self.word_metrics}
 
 
 
