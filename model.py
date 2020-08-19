@@ -35,10 +35,10 @@ def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
                  outputs = [context_vector, attention_weights], name = 'attention')
 
 
-def get_init_h(units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
+def get_init_h(lstm_units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     encoder_output = Input(feature_vector_shape, name = 'image_features')
-    layers = [Dense(units, name = 'init_h_{}'.format(i)) for i in range(n_layers)]
+    layers = [Dense(lstm_units, name = 'init_h_{}'.format(i)) for i in range(n_layers)]
 
     h_0 = Dropout(p_dropout)(layers[0](tf.reduce_mean(encoder_output, axis=1)))
 
@@ -48,10 +48,10 @@ def get_init_h(units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
     return Model(inputs = [encoder_output], outputs = [h_0], name = 'init_h')
 
 
-def get_init_c(units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
+def get_init_c(lstm_units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     encoder_output = Input(feature_vector_shape, name = 'image_features')
-    layers = [Dense(units, name = 'init_c_{}'.format(i)) for i in range(n_layers)]
+    layers = [Dense(lstm_units, name = 'init_c_{}'.format(i)) for i in range(n_layers)]
 
     c_0 = Dropout(p_dropout)(layers[0](tf.reduce_mean(encoder_output, axis=1)))
 
@@ -137,8 +137,8 @@ class Captioner(Model):
                  lambda_reg = 0.):
 
         super(Captioner, self).__init__()
-        self.init_h = get_init_h(units, n_layers_init, p_dropout, l1_reg, l2_reg)
-        self.init_c = get_init_c(units, n_layers_init, p_dropout, l1_reg, l2_reg)
+        self.init_h = get_init_h(lstm_units, n_layers_init, p_dropout, l1_reg, l2_reg)
+        self.init_c = get_init_c(lstm_units, n_layers_init, p_dropout, l1_reg, l2_reg)
         self.decoder = get_decoder(embedding_dim, units, lstm_units, vocab_size, p_dropout,
                                     l1_reg, l2_reg)
         self.lambda_reg = lambda_reg
