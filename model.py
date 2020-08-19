@@ -35,22 +35,28 @@ def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
                  outputs = [context_vector, attention_weights], name = 'attention')
 
 
-def get_init_h(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
+def get_init_h(units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     encoder_output = Input(feature_vector_shape, name = 'image_features')
-    init_h = Dense(units, name = 'init_h')
+    layers = [Dense(units, name = 'init_h_{}'.format(i)) for i in range(n_layers)]
 
-    h_0 = Dropout(p_dropout)(init_h(tf.reduce_mean(encoder_output, axis=1)))
+    h_0 = Dropout(p_dropout)(layers[0](tf.reduce_mean(encoder_output, axis=1)))
+
+    for i in range(1, n_layers):
+        h_0 = Dropout(p_dropout)(layers[i](h_0))
 
     return Model(inputs = [encoder_output], outputs = [h_0], name = 'init_h')
 
 
-def get_init_c(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
+def get_init_c(units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     encoder_output = Input(feature_vector_shape, name = 'image_features')
-    init_h = Dense(units, name = 'init_c')
+    layers = [Dense(units, name = 'init_c_{}'.format(i)) for i in range(n_layers)]
 
-    c_0 = Dropout(p_dropout)(init_h(tf.reduce_mean(encoder_output, axis=1)))
+    c_0 = Dropout(p_dropout)(layers[0](tf.reduce_mean(encoder_output, axis=1)))
+
+    for i in range(1, n_layers):
+        c_0 = Dropout(p_dropout)(layers[i](c_0))
 
     return Model(inputs = [encoder_output], outputs = [c_0], name = 'init_c')
 
@@ -58,6 +64,7 @@ def get_init_c(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
 def get_decoder(embedding_dim,
                 units,
+                lstm_units,
                 vocab_size,
                 p_dropout = 0,
                 l1_reg = 0,
@@ -66,7 +73,7 @@ def get_decoder(embedding_dim,
     attention = get_attention(units, p_dropout, l1_reg, l2_reg)
     embedding = Embedding(input_dim=vocab_size, output_dim=embedding_dim,
                           input_length = 1, name = 'embedding')
-    lstm = LSTM(units,
+    lstm = LSTM(lstm_units,
                    # return_sequences = True,
                    return_state = True,
                    recurrent_initializer = 'glorot_uniform',
@@ -117,6 +124,8 @@ class Captioner(Model):
     def __init__(self,
                  embedding_dim,
                  units,
+                 lstm_units,
+                 n_layers_init,
                  vocab_size,
                  tokenizer,
                  batch_size,
@@ -128,9 +137,9 @@ class Captioner(Model):
                  lambda_reg = 0.):
 
         super(Captioner, self).__init__()
-        self.init_h = get_init_h(units, p_dropout , l1_reg, l2_reg)
-        self.init_c = get_init_c(units, p_dropout, l1_reg, l2_reg)
-        self.decoder = get_decoder(embedding_dim, units, vocab_size, p_dropout,
+        self.init_h = get_init_h(units, n_layers_init, p_dropout, l1_reg, l2_reg)
+        self.init_c = get_init_c(units, n_layers_init, p_dropout, l1_reg, l2_reg)
+        self.decoder = get_decoder(embedding_dim, units, lstm_units, vocab_size, p_dropout,
                                     l1_reg, l2_reg)
         self.lambda_reg = lambda_reg
         self.tokenizer = tokenizer

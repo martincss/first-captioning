@@ -4,6 +4,8 @@ grid = [
         {
         'embedding_dim': [64],
         'units': [64],
+        'lstm_units': [64],
+        'n_layers_init': [2],
         'lambda_reg':[0.01],
         'optimizer':['Adam'],
         'learning_rate':[0.01],

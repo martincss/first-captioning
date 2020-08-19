@@ -31,6 +31,8 @@ def split_hparams(hparams):
 
     hparams_by_type['model'] = {'embedding_dim': hparams['embedding_dim'],
                                   'units': hparams['units'],
+                                  'lstm_units': hparams['lstm_units'],
+                                  'n_layers_init': hparams['n_layers_init'],
                                   'p_dropout':hparams['p_dropout'],
                                   'l1_reg':hparams['l1_reg'],
                                   'l2_reg':hparams['l2_reg'],
