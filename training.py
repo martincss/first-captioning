@@ -5,6 +5,8 @@ import sys
 import logging
 import numpy as np
 
+from tensorflow.keras.callbacks import EarlyStopping
+
 from train_data_preparation import tokenizer, dataset_train, train_max_length
 from valid_data_preparation import dataset_val
 from model import Captioner
@@ -73,6 +75,8 @@ def train(hparams, models_path = './'):
                       metrics = metrics, run_eagerly = True)
 
     logger_cb = LoggerCallback()
+    early_stopping_cb = EarlyStopping(monitor = 'val_bleu-4', patience = 10,
+                                      mode = 'max')
 
     logging.info('Training start for model ' + model_id)
     logging.info('hparams: ' + str(hparams))
