@@ -7,7 +7,7 @@ from tensorflow.keras.regularizers import l1_l2
 from params import feature_vector_shape, attention_features_shape
 
 
-def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
+def get_attention(units, lstm_units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     W1 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_feats')
     W2 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_hidden')
@@ -16,7 +16,7 @@ def get_attention(units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
     dropout = Dropout(p_dropout, name = 'dropout')
 
     encoder_output = Input(feature_vector_shape, name = 'image_features')
-    hidden_last = Input(units, name = 'last_hidden_state')
+    hidden_last = Input(lstm_units, name = 'last_hidden_state')
 
     score = V(tanh(
                     dropout(W1(encoder_output)) + \
@@ -70,7 +70,7 @@ def get_decoder(embedding_dim,
                 l1_reg = 0,
                 l2_reg = 0):
 
-    attention = get_attention(units, p_dropout, l1_reg, l2_reg)
+    attention = get_attention(units, lstm_units, p_dropout, l1_reg, l2_reg)
     embedding = Embedding(input_dim=vocab_size, output_dim=embedding_dim,
                           input_length = 1, name = 'embedding')
     lstm = LSTM(lstm_units,
@@ -88,8 +88,8 @@ def get_decoder(embedding_dim,
 
     word_input = Input(1, name = 'bow_input')
     encoder_output = Input(feature_vector_shape, name = 'image_features')
-    hidden_last = Input(units, name = 'last_hidden_state')
-    cell_last = Input(units, name = 'last_cell_state')
+    hidden_last = Input(lstm_units, name = 'last_hidden_state')
+    cell_last = Input(lstm_units, name = 'last_cell_state')
 
 
     # see keras doc on Embedding layer: if input shape is (batch, input_length)
