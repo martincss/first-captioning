@@ -35,7 +35,10 @@ tokenizer = make_tokenizer(all_captions, top_k)
 cap_vector = caption_features(train_captions, tokenizer, maxlen)
 
 # Calculates the max_length, which is used to store the attention weights
-train_max_length = calc_max_length(tokenizer.texts_to_sequences(train_captions))
+if maxlen is None:
+    train_max_length = calc_max_length(tokenizer.texts_to_sequences(train_captions))
+else:
+    train_max_length = maxlen
 
 # Training set already split from training and validation directories
 img_paths_train, cap_train = img_paths, cap_vector
