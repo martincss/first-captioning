@@ -84,7 +84,7 @@ def train(hparams, models_path = './'):
     history = captioner.fit(dataset_train, epochs=EPOCHS,
                             validation_data = dataset_val,
                             validation_steps = num_examples_val//VALID_BATCH_SIZE,
-                            callbacks=[logger_cb])
+                            callbacks=[logger_cb, early_stopping_cb])
 
     losses = {key:value for key, value in history.history.items() if 'val' not in key}
     metrics = {key[4:]:value for key, value in history.history.items() if 'val' not in key}

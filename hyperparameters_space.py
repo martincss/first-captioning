@@ -1,16 +1,45 @@
-search_name = None
+from utils import running_on_cluster
 
-grid = [
-        {
-        'embedding_dim': [64],
-        'units': [64],
-        'lstm_units': [64],
-        'n_layers_init': [2],
-        'lambda_reg':[0.01],
-        'optimizer':['Adam'],
-        'learning_rate':[0.01],
-        'p_dropout': [0.1],
-        'l1_reg':[0.01],
-        'l2_reg':[0.01]
-        }
-        ]
+if running_on_cluster():
+
+    search_name = None
+
+    grid = [
+            {
+            'embedding_dim': [512],
+            'units': [512],
+            'lstm_units': [512],
+            'n_layers_init': [1],
+            'lambda_reg':[1.],
+            'optimizer':['Adam'],
+            'learning_rate':[4e-4],
+            'init_dropout': [0.5],
+            'attn_dropout': [0],
+            'lstm_dropout': [0],
+            'logit_dropout': [0.5],
+            'l1_reg':[0.],
+            'l2_reg':[0.]
+            }
+            ]
+
+else:
+
+    search_name = None
+
+    grid = [
+            {
+            'embedding_dim': [64],
+            'units': [64],
+            'lstm_units': [128],
+            'n_layers_init': [1],
+            'lambda_reg':[0.01],
+            'optimizer':['Adam'],
+            'learning_rate':[0.01],
+            'init_dropout': [0.5],
+            'attn_dropout': [0],
+            'lstm_dropout': [0],
+            'logit_dropout': [0.5],
+            'l1_reg':[0.],
+            'l2_reg':[0.]
+            }
+            ]

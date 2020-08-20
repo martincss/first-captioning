@@ -66,24 +66,26 @@ def get_decoder(embedding_dim,
                 units,
                 lstm_units,
                 vocab_size,
-                p_dropout = 0,
+                attn_dropout = 0,
+                lstm_dropout =0,
+                logit_dropout = 0,
                 l1_reg = 0,
                 l2_reg = 0):
 
-    attention = get_attention(units, lstm_units, p_dropout, l1_reg, l2_reg)
+    attention = get_attention(units, lstm_units, attn_dropout, l1_reg, l2_reg)
     embedding = Embedding(input_dim=vocab_size, output_dim=embedding_dim,
                           input_length = 1, name = 'embedding')
     lstm = LSTM(lstm_units,
                    # return_sequences = True,
                    return_state = True,
                    recurrent_initializer = 'glorot_uniform',
-                   dropout = p_dropout,
+                   dropout = lstm_dropout,
                    # recurrent_dropout = p_dropout,
                    kernel_regularizer = l1_l2(l1_reg, l2_reg))
     logits_kernel = Dense(vocab_size,
                           kernel_regularizer=l1_l2(l1_reg, l2_reg),
                           name = 'logits_kernel')
-    dropout = Dropout(p_dropout, name = 'dropout')
+    dropout = Dropout(logit_dropout, name = 'dropout')
 
 
     word_input = Input(1, name = 'bow_input')
@@ -131,15 +133,19 @@ class Captioner(Model):
                  batch_size,
                  caption_length,
                  valid_batch_size,
-                 p_dropout = 0,
+                 init_dropout = 0,
+                 attn_dropout = 0,
+                 lstm_dropout =0,
+                 logit_dropout = 0,
                  l1_reg = 0,
                  l2_reg = 0,
                  lambda_reg = 0.):
 
         super(Captioner, self).__init__()
-        self.init_h = get_init_h(lstm_units, n_layers_init, p_dropout, l1_reg, l2_reg)
-        self.init_c = get_init_c(lstm_units, n_layers_init, p_dropout, l1_reg, l2_reg)
-        self.decoder = get_decoder(embedding_dim, units, lstm_units, vocab_size, p_dropout,
+        self.init_h = get_init_h(lstm_units, n_layers_init, init_dropout, l1_reg, l2_reg)
+        self.init_c = get_init_c(lstm_units, n_layers_init, init_dropout, l1_reg, l2_reg)
+        self.decoder = get_decoder(embedding_dim, units, lstm_units, vocab_size,
+                                   attn_dropout, lstm_dropout, logit_dropout,
                                     l1_reg, l2_reg)
         self.lambda_reg = lambda_reg
         self.tokenizer = tokenizer
@@ -211,7 +217,7 @@ class Captioner(Model):
         return losses
 
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(self, inputs, training=False, **kwargs):
 
         img_tensor = inputs
         # batch_size = int(tf.shape(img_tensor)[0])
