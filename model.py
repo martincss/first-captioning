@@ -133,6 +133,7 @@ class Captioner(Model):
                  batch_size,
                  caption_length,
                  valid_batch_size,
+                 num_examples_val,
                  init_dropout = 0,
                  attn_dropout = 0,
                  lstm_dropout =0,
@@ -153,12 +154,15 @@ class Captioner(Model):
         self.valid_batch_size = valid_batch_size
         self.caption_length = caption_length
 
+        self.validation_steps = num_examples_val // valid_batch_size
+        self.current_validation_step = 0
 
-    # def compile(self, optimizer, loss_fn, metrics, **kwargs):
-    #     super(Captioner, self).compile(optimizer=optimizer, loss=loss_fn, **kwargs)
-    #     # self.optimizer = optimizer
-    #     # self.loss_fn = loss_fn
-    #     self.word_metrics = metrics
+
+    def compile(self, optimizer, loss_fn, metrics, **kwargs):
+        super(Captioner, self).compile(optimizer=optimizer, loss=loss_fn, **kwargs)
+        # self.optimizer = optimizer
+        # self.loss_fn = loss_fn
+        self.word_metrics = metrics
 
     @tf.function
     def train_step(self, data):
@@ -265,6 +269,15 @@ class Captioner(Model):
 
     def test_step(self, data):
 
+        # manually reset metrics (awful, I know, but wouldn't work otherwise)
+        if self.current_validation_step == self.validation_steps:
+            self.current_validation_step = 1
+            for metric in self.word_metrics:
+                metric.reset_states()
+
+        else:
+            self.current_validation_step += 1
+
         img_tensor, target, captions = data
 
         logits, captions_pred = self(img_tensor, training=False)
@@ -284,9 +297,9 @@ class Captioner(Model):
 
         captions_true = [unpad(caption) for caption in captions]
 
-        self.compiled_metrics.update_state(y_true=captions_true, y_pred=captions_pred)
+        # self.compiled_metrics.update_state(y_true=captions_true, y_pred=captions_pred)
 
-        # for metric in self.compiled_metrics:
-        #     metric.update_state(y_true=captions_true, y_pred=captions_pred)
+        for metric in self.word_metrics:
+            metric.update_state(y_true=captions_true, y_pred=captions_pred)
 
-        return {m.name: m.result() for m in self.metrics}
+        return {m.name: m.result() for m in self.word_metrics}

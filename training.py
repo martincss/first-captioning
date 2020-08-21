@@ -61,7 +61,8 @@ def train(hparams, models_path = './'):
                           tokenizer = tokenizer,
                           batch_size = BATCH_SIZE,
                           caption_length = train_max_length,
-                          valid_batch_size = VALID_BATCH_SIZE)
+                          valid_batch_size = VALID_BATCH_SIZE,
+                          num_examples_val = num_examples_val)
 
     optimizer = make_optimizer(**hparams['optimizer'])
 

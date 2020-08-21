@@ -106,6 +106,9 @@ class METEORMetric(Metric):
 
     def __init__(self, alpha=0.9, beta=3, gamma=0.5,**kwargs):
         super().__init__(**kwargs)
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
         self.meteor = partial(meteor_score, alpha=alpha, beta=beta, gamma=gamma)
         self.total = self.add_weight("total", initializer="zeros")
         self.count = self.add_weight("count", initializer="zeros")
@@ -125,4 +128,4 @@ class METEORMetric(Metric):
 
     def get_config(self):
         base_config = super().get_config()
-        return {**base_config}#, 'alpha':self.alpha, 'beta':self.beta, 'gamma':self.gamma}
+        return {**base_config, 'alpha':self.alpha, 'beta':self.beta, 'gamma':self.gamma}
