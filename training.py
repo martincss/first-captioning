@@ -77,7 +77,8 @@ def train(hparams, models_path = './'):
 
     logger_cb = LoggerCallback()
     early_stopping_cb = EarlyStopping(monitor = 'val_bleu-4', patience = 10,
-                                      mode = 'max')
+                                      mode = 'max',
+                                      restore_best_weights = True)
 
     logging.info('Training start for model ' + model_id)
     logging.info('hparams: ' + str(hparams))
