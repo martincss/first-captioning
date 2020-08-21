@@ -33,7 +33,7 @@ else:
 # This will only be used as a slicing index, so a value of -1 will use the full
 # set
 if running_on_cluster():
-    num_examples = 30000
+    num_examples = 60000
     num_examples_val = 5000
 else:
     num_examples = 3000
@@ -43,7 +43,7 @@ else:
 # with a dynamic batch_size). Passing steps_per_epoch to fit won't solve it since
 # next epoch picks up from last batch (whose size is smaller than batch_size)
 # For some reason, validation_steps works well in fit.
-num_examples = num_examples // BATCH_SIZE
+num_examples = num_examples - num_examples%BATCH_SIZE
 
 # Data preparation
 
