@@ -154,11 +154,11 @@ class Captioner(Model):
         self.caption_length = caption_length
 
 
-    def compile(self, optimizer, loss_fn, metrics, **kwargs):
-        super(Captioner, self).compile(optimizer=optimizer, loss=loss_fn, **kwargs)
-        # self.optimizer = optimizer
-        # self.loss_fn = loss_fn
-        self.word_metrics = metrics
+    # def compile(self, optimizer, loss_fn, metrics, **kwargs):
+    #     super(Captioner, self).compile(optimizer=optimizer, loss=loss_fn, **kwargs)
+    #     # self.optimizer = optimizer
+    #     # self.loss_fn = loss_fn
+    #     self.word_metrics = metrics
 
     @tf.function
     def train_step(self, data):
@@ -269,12 +269,24 @@ class Captioner(Model):
 
         logits, captions_pred = self(img_tensor, training=False)
 
-        captions_true = [cap.decode('utf-8').split(' ')[1:-1] for cap in \
-                         captions.numpy().tolist()]
+        # captions_true = [cap.decode('utf-8').split(' ')[1:-1] for cap in \
+        #                  captions.numpy().tolist()]
+        captions = self.tokenizer.sequences_to_texts(target.numpy())
 
-        # self.compiled_metrics.update_state(y_true=captions_true, y_pred=captions_pred)
+        def unpad(caption):
+            """
+            caption:string
+            """
+            caption = caption.split(' ')
+            end_idx = caption.index('<end>')
 
-        for metric in self.word_metrics:
-            metric.update_state(y_true=captions_true, y_pred=captions_pred)
+            return caption[1:end_idx]
 
-        return {m.name: m.result() for m in self.word_metrics}
+        captions_true = [unpad(caption) for caption in captions]
+
+        self.compiled_metrics.update_state(y_true=captions_true, y_pred=captions_pred)
+
+        # for metric in self.compiled_metrics:
+        #     metric.update_state(y_true=captions_true, y_pred=captions_pred)
+
+        return {m.name: m.result() for m in self.metrics}
