@@ -16,6 +16,19 @@ attention_features_shape = 64
 feature_vector_shape = (attention_features_shape, features_shape)
 
 
+# Training
+if running_on_cluster():
+    BATCH_SIZE = 32
+    EPOCHS = 20
+    BUFFER_SIZE = 1000
+    VALID_BATCH_SIZE = 128
+else:
+    BATCH_SIZE = 4
+    EPOCHS = 10
+    BUFFER_SIZE = 100
+    VALID_BATCH_SIZE = 16
+
+
 # Select the number of instances for the training set
 # This will only be used as a slicing index, so a value of -1 will use the full
 # set
@@ -23,8 +36,14 @@ if running_on_cluster():
     num_examples = 30000
     num_examples_val = 5000
 else:
-    num_examples = 1000
+    num_examples = 3000
     num_examples_val = 100
+
+# Ensure that all batches are the same size (the implementation doesn't work
+# with a dynamic batch_size). Passing steps_per_epoch to fit won't solve it since
+# next epoch picks up from last batch (whose size is smaller than batch_size)
+# For some reason, validation_steps works well in fit.
+num_examples = num_examples // BATCH_SIZE
 
 # Data preparation
 
@@ -38,22 +57,7 @@ if running_on_cluster():
     maxlen = None
 
 else:
-    top_k = 50
-    maxlen = 5
+    top_k = 1000
+    maxlen = None
 
-
-# Model
 vocab_size = top_k + 1
-
-
-# Training
-if running_on_cluster():
-    BATCH_SIZE = 32
-    EPOCHS = 20
-    BUFFER_SIZE = 1000
-    VALID_BATCH_SIZE = 128
-else:
-    BATCH_SIZE = 4
-    EPOCHS = 5
-    BUFFER_SIZE = 100
-    VALID_BATCH_SIZE = 16

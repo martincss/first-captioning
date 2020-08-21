@@ -30,15 +30,15 @@ else:
             {
             'embedding_dim': [64],
             'units': [64],
-            'lstm_units': [128],
+            'lstm_units': [60],
             'n_layers_init': [1],
-            'lambda_reg':[0.01],
+            'lambda_reg':[1],
             'optimizer':['Adam'],
             'learning_rate':[0.01],
-            'init_dropout': [0.5],
+            'init_dropout': [0.],
             'attn_dropout': [0],
             'lstm_dropout': [0],
-            'logit_dropout': [0.5],
+            'logit_dropout': [0.],
             'l1_reg':[0.],
             'l2_reg':[0.]
             }
