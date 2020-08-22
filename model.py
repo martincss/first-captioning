@@ -203,7 +203,9 @@ class Captioner(Model):
             losses['cross_entropy'] = loss/caption_length
 
             # attention regularization loss
-            loss_attn_reg = self.lambda_reg * tf.reduce_sum((1 - attention_sum)**2)
+            # loss_attn_reg = self.lambda_reg * tf.reduce_sum((1 - attention_sum)**2)
+            loss_attn_reg = self.lambda_reg * tf.reduce_mean(tf.reduce_sum((1 - attention_sum)**2, axis =1))
+
             losses['attention_reg'] = loss_attn_reg/caption_length
             loss += loss_attn_reg
 
