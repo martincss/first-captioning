@@ -89,7 +89,7 @@ def train(hparams, models_path = './'):
                             callbacks=[logger_cb, early_stopping_cb])
 
     losses = {key:value for key, value in history.history.items() if 'val' not in key}
-    metrics = {key[4:]:value for key, value in history.history.items() if 'val' not in key}
+    metrics = {key[4:]:value for key, value in history.history.items() if 'val' in key}
 
     results = { 'id': model_id,
                 'losses': losses,
