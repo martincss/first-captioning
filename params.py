@@ -1,4 +1,5 @@
 from utils import running_on_cluster
+from config import DATASET_NAME, CNN_ENCODER
 
 # Image preprocessing
 if running_on_cluster():
@@ -10,8 +11,12 @@ else:
 
 # Shape of the vector extracted from InceptionV3 is (64, 2048)
 # These two variables represent that vector shape
-features_shape = 2048
-attention_features_shape = 64
+if CNN_ENCODER == 'InceptionV3':
+    features_shape = 2048
+    attention_features_shape = 64
+elif CNN_ENCODER == 'VGG16':
+    features_shape = 512
+    attention_features_shape = 196
 
 feature_vector_shape = (attention_features_shape, features_shape)
 
@@ -24,7 +29,7 @@ if running_on_cluster():
     VALID_BATCH_SIZE = 128
 else:
     BATCH_SIZE = 4
-    EPOCHS = 10
+    EPOCHS = 2
     BUFFER_SIZE = 100
     VALID_BATCH_SIZE = 16
 
@@ -37,7 +42,7 @@ if running_on_cluster():
     num_examples_val = 5000
 else:
     num_examples = 3000
-    num_examples_val = 100
+    num_examples_val = 500
 
 # Ensure that all batches are the same size (the implementation doesn't work
 # with a dynamic batch_size). Passing steps_per_epoch to fit won't solve it since
@@ -57,7 +62,7 @@ if running_on_cluster():
     maxlen = None
 
 else:
-    top_k = 1000
+    top_k = 2000
     maxlen = None
 
 vocab_size = top_k + 1

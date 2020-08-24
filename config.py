@@ -9,6 +9,7 @@ coco_dir = script_dir / 'COCO'
 iux_dir = script_dir / 'IU X-ray'
 
 DATASET_NAME = 'COCO'
+CNN_ENCODER = 'VGG16'
 
 ALL_DIRECTORIES = {
 
@@ -23,8 +24,8 @@ ALL_DIRECTORIES = {
         'ANNOTATIONS_VAL': coco_dir / 'annotations/captions_val2014.json',
 
         # Cached image features
-        'IMAGE_FEATURES_TRAIN': coco_dir / 'image_features_train',
-        'IMAGE_FEATURES_VAL': coco_dir / 'image_features_val',
+        'IMAGE_FEATURES_TRAIN': coco_dir / 'image_features_train' / CNN_ENCODER,
+        'IMAGE_FEATURES_VAL': coco_dir / 'image_features_val' / CNN_ENCODER,
 
         # Data saved during training
         # CHECKPOINT_PATH = coco_dir / 'checkpoints/train'
@@ -40,7 +41,7 @@ ALL_DIRECTORIES = {
         'ANNOTATIONS': iux_dir / 'image_caption_pairs.json',
 
         # Cached image features
-        'IMAGE_FEATURES': iux_dir / 'image_features',
+        'IMAGE_FEATURES': iux_dir / 'image_features' / CNN_ENCODER,
 
         # Data saved during training
         # CHECKPOINT_PATH = coco_dir / 'checkpoints/train'

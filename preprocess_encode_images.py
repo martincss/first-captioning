@@ -4,13 +4,13 @@ import json
 
 from tqdm import tqdm
 
-from config import DATASET_NAME, DIRECTORIES
+from config import DATASET_NAME, DIRECTORIES, CNN_ENCODER
 from params import CACHE_FEATURES_BATCH_SIZE
 
 from utils import enable_gpu_memory_growth
 from coco_utils import image_fnames_captions
 
-def load_image(image_path):
+def load_image(image_path, cnn_encoder):
     """
     Loads and preprocesses the input image by resizing to 299x299 and
     normalizing values to the [-1,1] range.
@@ -27,14 +27,24 @@ def load_image(image_path):
             same as input
 
     """
-    img = tf.io.read_file(image_path)
-    img = tf.image.decode_jpeg(img, channels=3)
-    img = tf.image.resize(img, (299, 299))
-    img = tf.keras.applications.inception_v3.preprocess_input(img)
+    if cnn_encoder == 'InceptionV3':
+
+        img = tf.io.read_file(image_path)
+        img = tf.image.decode_jpeg(img, channels=3)
+        img = tf.image.resize(img, (299, 299))
+        img = tf.keras.applications.inception_v3.preprocess_input(img)
+
+    elif cnn_encoder == 'VGG16':
+
+        img = tf.io.read_file(image_path)
+        img = tf.image.decode_jpeg(img, channels=3)
+        img = tf.image.resize(img, (224, 224))
+        img = tf.keras.applications.vgg16.preprocess_input(img)
+
     return img, image_path
 
 
-def image_features_extracter():
+def image_features_extracter(cnn_encoder):
     """
     Creates an instance of the InceptionV3 model used for image feature
     extraction. This model is used without the top classification layers, i.e
@@ -44,19 +54,32 @@ def image_features_extracter():
 
     """
 
-    image_model = tf.keras.applications.InceptionV3(include_top=False,
-                                                    weights='imagenet')
-    new_input = image_model.input
-    hidden_layer = image_model.layers[-1].output
+    if cnn_encoder == 'InceptionV3':
 
-    # TODO: not really sure why this redefinition is necessary (instead of
-    # just using image_model directly)
-    image_features_extract_model = tf.keras.Model(new_input, hidden_layer)
+        image_model = tf.keras.applications.InceptionV3(include_top=False,
+                                                        weights='imagenet')
+        new_input = image_model.input
+        hidden_layer = image_model.layers[-1].output
+
+        # TODO: not really sure why this redefinition is necessary (instead of
+        # just using image_model directly)
+        image_features_extract_model = tf.keras.Model(new_input, hidden_layer)
+
+    elif cnn_encoder == 'VGG16':
+
+        image_model = tf.keras.applications.VGG16(include_top=False,
+                                                  weights='imagenet')
+        new_input = image_model.input
+        hidden_layer = image_model.get_layer('block5_conv3').output
+
+        # TODO: not really sure why this redefinition is necessary (instead of
+        # just using image_model directly)
+        image_features_extract_model = tf.keras.Model(new_input, hidden_layer)
 
     return image_features_extract_model
 
 
-def extract_cache_features(img_name_vector, cache_dir):
+def extract_cache_features(img_name_vector, cache_dir, cnn_encoder):
     """
     Extracts features for each image in input vector and caches them to disk as
     numpy binaries .npy, to the specified directory.
@@ -79,7 +102,7 @@ def extract_cache_features(img_name_vector, cache_dir):
     """
 
 
-    image_features_extract_model = image_features_extracter()
+    image_features_extract_model = image_features_extracter(cnn_encoder)
 
 
     # Get unique images
@@ -88,7 +111,8 @@ def extract_cache_features(img_name_vector, cache_dir):
 
     image_dataset = tf.data.Dataset.from_tensor_slices(encode_train)
     image_dataset = image_dataset.map(
-      load_image, num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(
+      lambda img: load_image(img,cnn_encoder),
+      num_parallel_calls=tf.data.experimental.AUTOTUNE).batch(
                                                 CACHE_FEATURES_BATCH_SIZE)
 
     for img, path in tqdm(image_dataset):
@@ -115,7 +139,9 @@ if __name__ == '__main__':
                                             DIRECTORIES['ANNOTATIONS_TRAIN'],
                                             DIRECTORIES['IMAGES_TRAIN'],
                                             partition = 'train')
-        extract_cache_features(img_paths_train, DIRECTORIES['IMAGE_FEATURES_TRAIN'])
+        extract_cache_features(img_paths_train,
+                               DIRECTORIES['IMAGE_FEATURES_TRAIN'],
+                               CNN_ENCODER)
 
         print('Now caching image features for COCO val')
 
@@ -123,7 +149,9 @@ if __name__ == '__main__':
                                             DIRECTORIES['ANNOTATIONS_VAL'],
                                             DIRECTORIES['IMAGES_VAL'],
                                             partition = 'val')
-        extract_cache_features(img_paths_train, DIRECTORIES['IMAGE_FEATURES_VAL'])
+        extract_cache_features(img_paths_train,
+                               DIRECTORIES['IMAGE_FEATURES_VAL'],
+                               CNN_ENCODER)
 
     elif DATASET_NAME == 'IU X-ray':
 
@@ -133,4 +161,6 @@ if __name__ == '__main__':
             annotations = json.load(f)
 
         img_paths = list(annotations.keys())
-        extract_cache_features(img_paths, DIRECTORIES['IMAGE_FEATURES'])
+        extract_cache_features(img_paths,
+                               DIRECTORIES['IMAGE_FEATURES'],
+                               CNN_ENCODER)
