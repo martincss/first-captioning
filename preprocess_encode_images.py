@@ -104,6 +104,7 @@ def extract_cache_features(img_name_vector, cache_dir, cnn_encoder):
 
     image_features_extract_model = image_features_extracter(cnn_encoder)
 
+    img_name_vector = [str(img_path) for img_path in img_name_vector]
 
     # Get unique images
     encode_train = sorted(set(img_name_vector))
