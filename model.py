@@ -1,18 +1,22 @@
 import tensorflow as tf
 from tensorflow.nn import tanh, softmax, sigmoid
 from tensorflow.keras import Model, Sequential
-from tensorflow.keras.layers import Input, Dense, Dropout, Embedding, LSTM, GRU
+from tensorflow.keras.layers import Input, Dense, Dropout, Embedding, LSTM, Activation
 from tensorflow.keras.regularizers import l1_l2
 
-from params import feature_vector_shape, attention_features_shape
+from params import feature_vector_shape, attention_features_shape, USE_FLOAT16
+
+if USE_FLOAT16:
+    policy = tf.keras.mixed_precision.experimental.Policy('mixed_float16')
+    mixed_precision.set_policy(policy)
 
 
 def get_attention(units, lstm_units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     W1 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_feats')
     W2 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_hidden')
-    V = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'V')
-    f_beta = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), activation='sigmoid', name = 'f_beta')
+    V = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), dtype='float32', name = 'V')
+    f_beta = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg),dtype = 'float32', activation='sigmoid', name = 'f_beta')
     dropout = Dropout(p_dropout, name = 'dropout')
 
     encoder_output = Input(feature_vector_shape, name = 'image_features')
@@ -38,12 +42,15 @@ def get_attention(units, lstm_units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 def get_init_h(lstm_units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     encoder_output = Input(feature_vector_shape, name = 'image_features')
-    layers = [Dense(lstm_units, name = 'init_h_{}'.format(i)) for i in range(n_layers)]
+    layers = [Dense(lstm_units, activation='relu', name = 'init_h_{}'.format(i)) for i in range(n_layers)]
 
     h_0 = Dropout(p_dropout)(layers[0](tf.reduce_mean(encoder_output, axis=1)))
 
     for i in range(1, n_layers):
         h_0 = Dropout(p_dropout)(layers[i](h_0))
+
+    h_0 = Activation('linear', dtype='float32')(h_0)
+
 
     return Model(inputs = [encoder_output], outputs = [h_0], name = 'init_h')
 
@@ -51,12 +58,14 @@ def get_init_h(lstm_units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 def get_init_c(lstm_units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     encoder_output = Input(feature_vector_shape, name = 'image_features')
-    layers = [Dense(lstm_units, name = 'init_c_{}'.format(i)) for i in range(n_layers)]
+    layers = [Dense(lstm_units, activation='relu', name = 'init_c_{}'.format(i)) for i in range(n_layers)]
 
     c_0 = Dropout(p_dropout)(layers[0](tf.reduce_mean(encoder_output, axis=1)))
 
     for i in range(1, n_layers):
         c_0 = Dropout(p_dropout)(layers[i](c_0))
+
+    c_0 = Activation('linear', dtype='float32')(c_0)
 
     return Model(inputs = [encoder_output], outputs = [c_0], name = 'init_c')
 
@@ -117,6 +126,8 @@ def get_decoder(embedding_dim,
                                               lstm_output],
                                               axis=-1)))
 
+    logits = Activation('linear', dtype='float32')(logits)
+
     return Model(inputs = [word_input, encoder_output, hidden_last, cell_last],
                  outputs = [logits, attention_weights, hidden, cell])
 
@@ -159,6 +170,8 @@ class Captioner(Model):
 
 
     def compile(self, optimizer, loss_fn, metrics, **kwargs):
+        if USE_FLOAT16:
+            optimizer = mixed_precision.LossScaleOptimizer(optimizer, loss_scale='dynamic')
         super(Captioner, self).compile(optimizer=optimizer, loss=loss_fn, **kwargs)
         # self.optimizer = optimizer
         # self.loss_fn = loss_fn
@@ -214,11 +227,19 @@ class Captioner(Model):
             losses['weight_decay'] = loss_weight_decay/caption_length
             loss += loss_weight_decay
 
+            if USE_FLOAT16:
+                scaled_loss = optimizer.get_scaled_loss(loss)
+
 
         losses['total'] = loss/ caption_length
 
-        gradients = tape.gradient(loss, self.decoder.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.decoder.trainable_variables))
+        if USE_FLOAT16:
+            scaled_gradients = tape.gradient(scaled_loss, self.trainable_variables)
+            gradients = self.optimizer.get_unscaled_gradients(scaled_gradients)
+
+
+        gradients = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
 
         return losses
 

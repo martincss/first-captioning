@@ -1,6 +1,8 @@
 from utils import running_on_cluster
 from config import DATASET_NAME, CNN_ENCODER
 
+USE_FLOAT16 = False
+
 # Image preprocessing
 if running_on_cluster():
     CACHE_FEATURES_BATCH_SIZE = 32
