@@ -150,7 +150,7 @@ if __name__ == '__main__':
                                             DIRECTORIES['ANNOTATIONS_VAL'],
                                             DIRECTORIES['IMAGES_VAL'],
                                             partition = 'val')
-        extract_cache_features(img_paths_train,
+        extract_cache_features(img_paths_val,
                                DIRECTORIES['IMAGE_FEATURES_VAL'],
                                CNN_ENCODER)
 
