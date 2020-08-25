@@ -1,8 +1,10 @@
 import tensorflow as tf
 from tensorflow.nn import tanh, softmax, sigmoid
 from tensorflow.keras import Model, Sequential
-from tensorflow.keras.layers import Input, Dense, Dropout, Embedding, LSTM, Activation
+from tensorflow.keras.layers import Input, Dense, Dropout, Embedding, LSTM, Activation, Concatenate
 from tensorflow.keras.regularizers import l1_l2
+
+from tensorflow.keras.mixed_precision import experimental as mixed_precision
 
 from params import feature_vector_shape, attention_features_shape, USE_FLOAT16
 
@@ -15,25 +17,34 @@ def get_attention(units, lstm_units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
     W1 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_feats')
     W2 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_hidden')
-    V = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), dtype='float32', name = 'V')
-    f_beta = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg),dtype = 'float32', activation='sigmoid', name = 'f_beta')
+    V = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'V')
+    f_beta = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'f_beta')
     dropout = Dropout(p_dropout, name = 'dropout')
 
+    # shape = (batch, attn_features, features_shape)
     encoder_output = Input(feature_vector_shape, name = 'image_features')
+    # shape = (batch, lstm_units)
     hidden_last = Input(lstm_units, name = 'last_hidden_state')
 
+    # shape = (batch, attn_features, 1)
     score = V(tanh(
                     dropout(W1(encoder_output)) + \
                     dropout(W2(tf.expand_dims(hidden_last, axis = 1)))
                     ))
+    # shape = (batch, attn_features)
+    score = dropout(tf.reduce_sum(score, axis=2))
+    attention_weights = Activation('softmax', dtype = 'float32')(score)
 
-    attention_weights = softmax(dropout(score), axis=1)
+    # beta = f_beta(dropout(tf.expand_dims(hidden_last, axis = 1)))
+    # shape = (batch, 1)
+    beta = f_beta(hidden_last)
+    beta = Activation('sigmoid', dtype='float32')(beta)
 
-    beta = dropout(f_beta(tf.expand_dims(hidden_last, axis = 1)))
-
-    context_vector = beta * attention_weights * encoder_output
-    context_vector = tf.reduce_sum(context_vector, axis=1)
-    attention_weights = tf.reduce_sum(attention_weights, axis=2)
+    # shape = (batch, attn_features, features_shape)
+    context_vector = tf.expand_dims(attention_weights, axis=2) * encoder_output
+    # shape = (batch, features_shape)
+    context_vector = beta * tf.reduce_sum(context_vector, axis=1)
+    context_vector = Activation('linear', dtype='float32')(context_vector)
 
     return Model(inputs = [encoder_output, hidden_last],
                  outputs = [context_vector, attention_weights], name = 'attention')
@@ -96,9 +107,11 @@ def get_decoder(embedding_dim,
                           name = 'logits_kernel')
     dropout = Dropout(logit_dropout, name = 'dropout')
 
-
+    # shape = (batch, 1)
     word_input = Input(1, name = 'bow_input')
+    # shape = (batch, attn_features, features_shape)
     encoder_output = Input(feature_vector_shape, name = 'image_features')
+    # shape = (batch, lstm_units)
     hidden_last = Input(lstm_units, name = 'last_hidden_state')
     cell_last = Input(lstm_units, name = 'last_cell_state')
 
@@ -109,23 +122,28 @@ def get_decoder(embedding_dim,
     # (batch, 1, embedding_dim). We will use this axis 1 for the lstm input
     embedded_word = embedding(word_input)
 
+    # context_vector shape = (batch, features_shape)
     context_vector, attention_weights = attention([encoder_output, hidden_last])
 
     # RNN input shape must be (batch, time_steps, features). In our case,
     # time_steps is 1, so we must expand the context vector dimensions
-    lstm_output, hidden, cell = lstm(tf.concat([
-                                        embedded_word,
-                                        tf.expand_dims(context_vector, axis=1)],
-                                        axis = -1),
-                                initial_state = [hidden_last, cell_last])
+    # lstm_output shape = (batch, lstm_units)
+
+    lstm_input = Concatenate(axis=-1)([embedded_word,
+                                       tf.expand_dims(context_vector, axis=1)])
+
+    lstm_output, hidden, cell = lstm(lstm_input,
+                                     initial_state = [hidden_last, cell_last])
 
     # Now we finally drop the extra 1 axis in the embedded_word
-    logits = dropout(logits_kernel(tf.concat([tf.reduce_sum(embedded_word,
-                                                            axis=1),
-                                              context_vector,
-                                              lstm_output],
-                                              axis=-1)))
 
+    logits_kernel_input = Concatenate(axis=-1)([tf.reduce_sum(embedded_word,
+                                                            axis=1),
+                                                context_vector,
+                                                lstm_output])
+
+    logits = dropout(logits_kernel(logits_kernel_input))
+    # shape = (batch, vocab_size)
     logits = Activation('linear', dtype='float32')(logits)
 
     return Model(inputs = [word_input, encoder_output, hidden_last, cell_last],
@@ -237,8 +255,9 @@ class Captioner(Model):
             scaled_gradients = tape.gradient(scaled_loss, self.trainable_variables)
             gradients = self.optimizer.get_unscaled_gradients(scaled_gradients)
 
+        else:
+            gradients = tape.gradient(loss, self.trainable_variables)
 
-        gradients = tape.gradient(loss, self.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
 
         return losses
