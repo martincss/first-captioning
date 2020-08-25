@@ -10,7 +10,7 @@ def make_optimizer(**kwargs):
 
     options = {'Adam': Adam, 'RMSprop': RMSprop}
 
-    optimizer = options[name](learning_rate, clipnorm = 5.)
+    optimizer = options[name](learning_rate)
 
     return optimizer
 

@@ -101,7 +101,8 @@ def get_decoder(embedding_dim,
                    recurrent_initializer = 'glorot_uniform',
                    dropout = lstm_dropout,
                    # recurrent_dropout = p_dropout,
-                   kernel_regularizer = l1_l2(l1_reg, l2_reg))
+                   kernel_regularizer = l1_l2(l1_reg, l2_reg),\
+                   dtype = 'float32')
     logits_kernel = Dense(vocab_size,
                           kernel_regularizer=l1_l2(l1_reg, l2_reg),
                           name = 'logits_kernel')
@@ -246,7 +247,7 @@ class Captioner(Model):
             loss += loss_weight_decay
 
             if USE_FLOAT16:
-                scaled_loss = optimizer.get_scaled_loss(loss)
+                scaled_loss = self.optimizer.get_scaled_loss(loss)
 
 
         losses['total'] = loss/ caption_length
