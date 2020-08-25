@@ -49,7 +49,7 @@ def get_init_h(lstm_units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
     for i in range(1, n_layers):
         h_0 = Dropout(p_dropout)(layers[i](h_0))
 
-    h_0 = Activation('linear', dtype='float32')(h_0)
+    h_0 = Activation('tanh', dtype='float32')(h_0)
 
 
     return Model(inputs = [encoder_output], outputs = [h_0], name = 'init_h')
@@ -65,7 +65,7 @@ def get_init_c(lstm_units, n_layers, p_dropout = 0, l1_reg = 0, l2_reg = 0):
     for i in range(1, n_layers):
         c_0 = Dropout(p_dropout)(layers[i](c_0))
 
-    c_0 = Activation('linear', dtype='float32')(c_0)
+    c_0 = Activation('tanh', dtype='float32')(c_0)
 
     return Model(inputs = [encoder_output], outputs = [c_0], name = 'init_c')
 
