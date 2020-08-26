@@ -1,7 +1,16 @@
-from utils import running_on_cluster
+import os
 from config import DATASET_NAME, CNN_ENCODER
 
 USE_FLOAT16 = True
+MEMORY_LIMIT = None
+GPU_NUMBER = 0
+
+def running_on_cluster():
+
+    hostname = os.uname()[1]
+
+    return hostname == 'nabucodonosor2'
+
 
 # Image preprocessing
 if running_on_cluster():
