@@ -128,6 +128,8 @@ def get_decoder(embedding_dim,
     # In this case, input_length is always 1, so the embedded_word shape is
     # (batch, 1, embedding_dim). We will use this axis 1 for the lstm input
     embedded_word = embedding(word_input)
+    #this just for caompatibility with mixed precision
+    embedded_word = Activation('linear')(embedded_word)
 
     # context_vector shape = (batch, features_shape)
     context_vector, attention_weights = attention([encoder_output, hidden_last])
@@ -150,7 +152,7 @@ def get_decoder(embedding_dim,
 
     # Now we finally drop the extra 1 axis in the embedded_word
     logits_kernel_input = tanh(tf.reduce_sum(embedded_word,axis=1) + \
-                               embedded_hidden + embedded_context))
+                               embedded_hidden + embedded_context)
 
     # shape = (batch, vocab_size)
     logits = logits_kernel(dropout(logits_kernel_input))
