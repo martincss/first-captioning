@@ -33,6 +33,7 @@ def split_hparams(hparams):
                                   'units': hparams['units'],
                                   'lstm_units': hparams['lstm_units'],
                                   'n_layers_init': hparams['n_layers_init'],
+                                  'n_layers_att': hparams['n_layers_att'],
                                   'init_dropout':hparams['init_dropout'],
                                   'attn_dropout':hparams['attn_dropout'],
                                   'lstm_dropout':hparams['lstm_dropout'],

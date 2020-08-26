@@ -13,9 +13,10 @@ if USE_FLOAT16:
     mixed_precision.set_policy(policy)
 
 
-def get_attention(units, lstm_units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
+def get_attention(units, lstm_units, n_layers_att, p_dropout = 0, l1_reg = 0, l2_reg = 0):
 
-    W1 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_feats')
+    # W1 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_feats')
+    W1 = [Dense(units, activation='tanh', name = 'W_feats_{}'.format(i)) for i in range(n_layers_att)]
     W2 = Dense(units, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'W_hidden')
     V = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'V')
     f_beta = Dense(1, kernel_regularizer=l1_l2(l1_reg, l2_reg), name = 'f_beta')
@@ -26,9 +27,15 @@ def get_attention(units, lstm_units, p_dropout = 0, l1_reg = 0, l2_reg = 0):
     # shape = (batch, lstm_units)
     hidden_last = Input(lstm_units, name = 'last_hidden_state')
 
+    projected_features = dropout(W1[0](encoder_output))
+
+    for i in range(1, n_layers_att):
+        projected_features = dropout(W1[i](projected_features))
+
+
     # shape = (batch, attn_features, 1)
     score = V(tanh(
-                    dropout(W1(encoder_output)) + \
+                    projected_features + \
                     dropout(W2(tf.expand_dims(hidden_last, axis = 1)))
                     ))
     # shape = (batch, attn_features)
@@ -86,13 +93,14 @@ def get_decoder(embedding_dim,
                 units,
                 lstm_units,
                 vocab_size,
+                n_layers_att,
                 attn_dropout = 0,
                 lstm_dropout =0,
                 logit_dropout = 0,
                 l1_reg = 0,
                 l2_reg = 0):
 
-    attention = get_attention(units, lstm_units, attn_dropout, l1_reg, l2_reg)
+    attention = get_attention(units, lstm_units, n_layers_att, attn_dropout, l1_reg, l2_reg)
     embedding = Embedding(input_dim=vocab_size, output_dim=embedding_dim,
                           input_length = 1, name = 'embedding')
     lstm = LSTM(lstm_units,
@@ -103,12 +111,12 @@ def get_decoder(embedding_dim,
                    # recurrent_dropout = p_dropout,
                    kernel_regularizer = l1_l2(l1_reg, l2_reg),\
                    dtype = 'float32')
-    # last_layer_hidden = Dense(embedding_dim,
-    #                           kernel_regularizer=l1_l2(l1_reg, l2_reg),
-    #                           name = 'last_hidden')
-    # last_layer_context = Dense(embedding_dim,
-    #                           kernel_regularizer=l1_l2(l1_reg, l2_reg),
-    #                           name = 'last_context')
+    last_layer_hidden = Dense(embedding_dim,
+                              kernel_regularizer=l1_l2(l1_reg, l2_reg),
+                              name = 'last_hidden')
+    last_layer_context = Dense(embedding_dim,
+                              kernel_regularizer=l1_l2(l1_reg, l2_reg),
+                              name = 'last_context')
     logits_kernel = Dense(vocab_size,
                           kernel_regularizer=l1_l2(l1_reg, l2_reg),
                           name = 'logits_kernel')
@@ -147,17 +155,17 @@ def get_decoder(embedding_dim,
                                      initial_state = [hidden_last, cell_last])
 
     # shape = (batch, embedding_dim)
-    # embedded_hidden = last_layer_hidden(dropout(lstm_output))
-    # embedded_context = last_layer_context(context_vector)
-    #
-    # # Now we finally drop the extra 1 axis in the embedded_word
-    # logits_kernel_input = tanh(tf.reduce_sum(embedded_word,axis=1) + \
-    #                            embedded_hidden + embedded_context)
+    embedded_hidden = last_layer_hidden(dropout(lstm_output))
+    embedded_context = last_layer_context(context_vector)
 
-    logits_kernel_input = Concatenate(axis=-1)([tf.reduce_sum(embedded_word,
-                                                        axis=1),
-                                            context_vector,
-                                            lstm_output])
+    # Now we finally drop the extra 1 axis in the embedded_word
+    logits_kernel_input = tanh(tf.reduce_sum(embedded_word,axis=1) + \
+                               embedded_hidden + embedded_context)
+
+    # logits_kernel_input = Concatenate(axis=-1)([tf.reduce_sum(embedded_word,
+    #                                                     axis=1),
+    #                                         context_vector,
+    #                                         lstm_output])
 
 
     # shape = (batch, vocab_size)
@@ -175,6 +183,7 @@ class Captioner(Model):
                  units,
                  lstm_units,
                  n_layers_init,
+                 n_layers_att,
                  vocab_size,
                  tokenizer,
                  batch_size,
@@ -193,7 +202,7 @@ class Captioner(Model):
         self.init_h = get_init_h(lstm_units, n_layers_init, init_dropout, l1_reg, l2_reg)
         self.init_c = get_init_c(lstm_units, n_layers_init, init_dropout, l1_reg, l2_reg)
         self.decoder = get_decoder(embedding_dim, units, lstm_units, vocab_size,
-                                   attn_dropout, lstm_dropout, logit_dropout,
+                                   n_layers_att, attn_dropout, lstm_dropout, logit_dropout,
                                     l1_reg, l2_reg)
         self.lambda_reg = lambda_reg
         self.tokenizer = tokenizer
