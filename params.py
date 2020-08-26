@@ -3,7 +3,7 @@ from config import DATASET_NAME, CNN_ENCODER
 
 USE_FLOAT16 = True
 MEMORY_LIMIT = None
-GPU_NUMBER = 0
+GPU_NUMBER = None
 
 def running_on_cluster():
 

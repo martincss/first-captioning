@@ -1,12 +1,16 @@
 import os
 import tensorflow as tf
-from params import MEMORY_LIMIT, GPU_NUMBER
+from params import MEMORY_LIMIT, GPU_NUMBER, USE_FLOAT16
 #
 # def running_on_cluster():
 #
 #     hostname = os.uname()[1]
 #
 #     return hostname == 'nabucodonosor2'
+
+# if USE_FLOAT16:
+#     policy = tf.keras.mixed_precision.experimental.Policy('mixed_float16')
+#     mixed_precision.set_policy(policy)
 
 
 def enable_gpu_memory_growth():
