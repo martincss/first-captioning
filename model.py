@@ -103,12 +103,12 @@ def get_decoder(embedding_dim,
                    # recurrent_dropout = p_dropout,
                    kernel_regularizer = l1_l2(l1_reg, l2_reg),\
                    dtype = 'float32')
-    last_layer_hidden = Dense(embedding_dim,
-                              kernel_regularizer=l1_l2(l1_reg, l2_reg),
-                              name = 'last_hidden')
-    last_layer_context = Dense(embedding_dim,
-                              kernel_regularizer=l1_l2(l1_reg, l2_reg),
-                              name = 'last_context')
+    # last_layer_hidden = Dense(embedding_dim,
+    #                           kernel_regularizer=l1_l2(l1_reg, l2_reg),
+    #                           name = 'last_hidden')
+    # last_layer_context = Dense(embedding_dim,
+    #                           kernel_regularizer=l1_l2(l1_reg, l2_reg),
+    #                           name = 'last_context')
     logits_kernel = Dense(vocab_size,
                           kernel_regularizer=l1_l2(l1_reg, l2_reg),
                           name = 'logits_kernel')
@@ -147,12 +147,18 @@ def get_decoder(embedding_dim,
                                      initial_state = [hidden_last, cell_last])
 
     # shape = (batch, embedding_dim)
-    embedded_hidden = last_layer_hidden(dropout(lstm_output))
-    embedded_context = last_layer_context(context_vector)
+    # embedded_hidden = last_layer_hidden(dropout(lstm_output))
+    # embedded_context = last_layer_context(context_vector)
+    #
+    # # Now we finally drop the extra 1 axis in the embedded_word
+    # logits_kernel_input = tanh(tf.reduce_sum(embedded_word,axis=1) + \
+    #                            embedded_hidden + embedded_context)
 
-    # Now we finally drop the extra 1 axis in the embedded_word
-    logits_kernel_input = tanh(tf.reduce_sum(embedded_word,axis=1) + \
-                               embedded_hidden + embedded_context)
+    logits_kernel_input = Concatenate(axis=-1)([tf.reduce_sum(embedded_word,
+                                                        axis=1),
+                                            context_vector,
+                                            lstm_output])
+
 
     # shape = (batch, vocab_size)
     logits = logits_kernel(dropout(logits_kernel_input))

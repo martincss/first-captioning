@@ -1,4 +1,4 @@
-from utils import running_on_cluster
+from params import running_on_cluster
 
 if running_on_cluster():
 
